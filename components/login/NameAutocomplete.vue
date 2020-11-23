@@ -129,7 +129,7 @@ export default Vue.extend({
       'registerNameOnceBalance',
       'isSignedUp',
       'signupRequest',
-      'delegatedCredentialsRequest',
+      'sessionRequest',
       'onboard',
     ]),
     async querySelections(typedName, nonce) {

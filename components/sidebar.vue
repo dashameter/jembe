@@ -76,7 +76,7 @@ import { mapGetters } from 'vuex'
 export default {
   data() {
     // State change to LoggedOut
-    if (!this.$store.getters.hasDelegatedCredentials && !this.isIndexRoute) {
+    if (!this.$store.getters.hasSession && !this.isIndexRoute) {
       this.logout()
     }
     return {

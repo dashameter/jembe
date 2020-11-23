@@ -89,7 +89,7 @@ export default {
       'registerNameOnceBalance',
       'isSignedUp',
       'signupRequest',
-      'delegatedCredentialsRequest',
+      'sessionRequest',
       'onboard',
     ]),
     ...mapMutations([

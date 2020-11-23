@@ -59,7 +59,7 @@
                     class="mt-n3 lowercase"
                     font-weight="bold"
                     style="color: #008de4"
-                    :disabled="!$store.getters.hasDelegatedCredentials"
+                    :disabled="!$store.getters.hasSession"
                     @click.stop="followByUsername()"
                     >{{ amIFollowingJammer ? 'Following' : 'Follow' }}
                   </v-btn>

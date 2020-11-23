@@ -83,7 +83,8 @@ const getInitState = () => {
     mnemonic: process.env.MNEMONIC,
     identityId: process.env.IDENTITYID,
     tmpPrivKey: '',
-    delegatedCredential: {},
+    session: {},
+    validSessionIdentities: {},
     accounts: [],
     name: {
       label: process.env.NAME_LABEL,
@@ -120,6 +121,37 @@ const getInitState = () => {
 export const state = () => getInitState()
 
 export const getters = {
+  getValidSessionIdentity: (state) => (doc) => {
+    console.log('validsession :>> ', doc)
+    const sessionIdentityId = doc.$ownerId
+    // const createdAt = doc.$createdAt
+
+    if (sessionIdentityId in state.validSessionIdentities) {
+      console.log(
+        'validsession',
+        state.validSessionIdentities[sessionIdentityId]
+      )
+      const [validSessionIdentity] = state.validSessionIdentities[
+        sessionIdentityId
+      ].filter(
+        (x) =>
+          x.$createdAt < doc.$createdAt &&
+          x.expiresAt > doc.$createdAt &&
+          x.sessionIdentityId === doc.$ownerId &&
+          x.contractId === doc.$dataContractId
+      )
+      console.log(
+        'validsession found cached sessionidentity :>> ',
+        validSessionIdentity
+      )
+      return validSessionIdentity || null
+    } else {
+      console.log(
+        'validsession no cached sessionidentity found, fetching a new one ..:>> '
+      )
+      return null
+    }
+  },
   badgeCount: (state) => (eventType) =>
     state.notifications.filter((n) => n.$createdAt > state.lastSeen[eventType])
       .length,
@@ -195,8 +227,8 @@ export const getters = {
   getLoadingStep(state) {
     return state.loadingSteps[state.loadingStep]
   },
-  hasDelegatedCredentials(state) {
-    return Object.keys(state.delegatedCredential).length > 0
+  hasSession(state) {
+    return Object.keys(state.session).length > 0
   },
   getJams: (state) => (view) => {
     return state.jams[view]
@@ -218,6 +250,14 @@ export const getters = {
 }
 
 export const mutations = {
+  setValidSessionIdentity(state, session) {
+    if (state.validSessionIdentities[session.sessionIdentityId])
+      state.validSessionIdentities[session.sessionIdentityId].push(session)
+    else
+      Vue.set(state.validSessionIdentities, session.sessionIdentityId, [
+        session,
+      ])
+  },
   setLastSeen(state, { eventType, lastSeenTimestamp }) {
     Vue.set(state.lastSeen, eventType, lastSeenTimestamp)
   },
@@ -300,9 +340,9 @@ export const mutations = {
   setUserPubKey(state, userPubKey) {
     state.userPubKey = userPubKey
   },
-  setDelegatedCredentials(state, { delegatedCredential }) {
-    // state.delegatedCredential = { ...delegatedCredential }
-    Vue.set(state, 'delegatedCredential', { ...delegatedCredential })
+  setSession(state, { session }) {
+    // state.session = { ...session }
+    Vue.set(state, 'session', { ...session })
   },
   setiFollow(state, { jammerId, isFollowing }) {
     const userNormalizedLabel = state.name.label.toLowerCase()
@@ -402,6 +442,69 @@ export const mutations = {
   },
 }
 export const actions = {
+  async fetchValidSessionIdentity({ dispatch, commit, getters }, doc) {
+    let validSessionIdentity = getters.getValidSessionIdentity(doc)
+
+    if (validSessionIdentity) return validSessionIdentity
+
+    const queryOpts = {
+      limit: 1,
+      startAt: 1,
+      where: [
+        ['$createdAt', '<', doc.$createdAt],
+        ['expiresAt', '>', doc.$createdAt],
+        ['sessionIdentityId', '==', doc.$ownerId],
+        ['contractId', '==', doc.$dataContractId],
+      ],
+    }
+    console.log('validator.queryOpts :>> ', queryOpts)
+
+    validSessionIdentity = (
+      await dispatch('queryDocuments', {
+        dappName: 'primitives',
+        typeLocator: 'Session',
+        queryOpts,
+      })
+    )[0]
+
+    if (validSessionIdentity) {
+      validSessionIdentity = validSessionIdentity.toJSON()
+      commit('setValidSessionIdentity', validSessionIdentity)
+    }
+
+    return validSessionIdentity || null
+  },
+  async validateDocumentSessionIdentity({ dispatch }, documents) {
+    // const documentPromises =
+
+    const validDocuments = []
+    for (let idx = 0; idx < documents.length; idx++) {
+      const doc = documents[idx]
+      const dpnsUser = await dispatch('resolveUsername', doc.data.userName)
+
+      // Find a valid session
+      const validSessionResult = await dispatch(
+        'fetchValidSessionIdentity',
+        doc.toJSON()
+      )
+
+      console.log('validator validSessionResult :>> ', validSessionResult)
+
+      console.log('validator', doc, { dpnsUser })
+
+      if (
+        validSessionResult && // jams.$ownerId === Session.sessionIdentityId with valid timestamp
+        dpnsUser && // label exists on dpns
+        dpnsUser.$id === doc.data.userId && // jams.userId === dpns.userId for given label
+        dpnsUser.records.dashUniqueIdentityId === validSessionResult.$ownerId // The main identity that authorized the session owns the username
+      ) {
+        doc.data.userName = dpnsUser.label // Overwrite userName to ensure correct capitalization
+        validDocuments.push(doc)
+      }
+    }
+    return validDocuments
+    // return documents
+  },
   async fetchLastSeen({ commit, dispatch, state }, eventType) {
     const queryOpts = {
       limit: 1,
@@ -594,13 +697,13 @@ export const actions = {
         const decryptedMessage = { ...element.toJSON() }
         console.log('state.dele :>> ', state.dele)
         console.log(
-          'state.delegatedCredential.decryptPrivKey :>> ',
-          state.delegatedCredential.decryptPrivKey
+          'state.session.decryptPrivKey :>> ',
+          state.session.decryptPrivKey
         )
         console.log('element.data.encMessage:>> ', element.data.encMessage)
         console.log('element.data.pubKey:>> ', element.data.pubKey)
         decryptedMessage.encMessage = dsm.decrypt(
-          state.delegatedCredential.decryptPrivKey,
+          state.session.decryptPrivKey,
           element.data.encMessage,
           element.data.pubKey,
           { binary: true }
@@ -628,7 +731,7 @@ export const actions = {
         console.log('decryptedMessage :>> ', decryptedMessage)
 
         decryptedMessage.encMessage = dsm.decrypt(
-          state.delegatedCredential.decryptPrivKey,
+          state.session.decryptPrivKey,
           element.data.encMessage,
           element.data.pubKey,
           { binary: true }
@@ -677,7 +780,7 @@ export const actions = {
     ).publicKeys[0].data
 
     // Retrieve receiver publickey of my main identity
-    const mainIdentityPubKey = state.delegatedCredential.decryptPubKey
+    const mainIdentityPubKey = state.session.decryptPubKey
 
     // Retrieve sender private key for tmp identity
     const acc = await client.wallet.getAccount({ index: 0 })
@@ -817,7 +920,7 @@ export const actions = {
   async resolveUsername({ state, commit }, userName) {
     const userNormalizedLabel = userName.toLowerCase()
     let dpnsUser
-    if (userName in state.dpns) {
+    if (userNormalizedLabel in state.dpns) {
       dpnsUser = state.dpns[userNormalizedLabel]
       console.log('Found existing cached dpns user', dpnsUser)
     } else {
@@ -1070,7 +1173,7 @@ export const actions = {
         await dispatch('signupRequest', {})
         break
       case 'login':
-        await dispatch('delegatedCredentialsRequest', {})
+        await dispatch('sessionRequest', {})
         break
 
       default:
@@ -1285,9 +1388,9 @@ export const actions = {
       payload,
     })
   },
-  async delegatedCredentialsRequest({ dispatch }) {
+  async sessionRequest({ dispatch }) {
     const payload = {
-      DelegatedCredentials: {
+      Session: {
         delegateIdentityId: '$fill', // Filled by PW
         pubKey: '$fill', // Filled by PW
         encPvtKey: '$fill', // Filled by PW
@@ -1838,8 +1941,8 @@ export const actions = {
     return isSignedUp
   },
 
-  async getDelegatedCredential({ dispatch }, { userId }) {
-    console.log('getDelegatedCredential()', { userId })
+  async getSession({ dispatch }, { userId }) {
+    console.log('getSession()', { userId })
     const queryOpts = {
       startAt: 1,
       limit: 1,
@@ -1848,7 +1951,7 @@ export const actions = {
     }
 
     const dappName = 'primitives'
-    const typeLocator = 'DelegatedCredentials'
+    const typeLocator = 'Session'
 
     const [result] = await dispatch('queryDocuments', {
       dappName,
@@ -1954,21 +2057,21 @@ export const actions = {
   //   const publicKey = curIdentityHDKey.publicKey.toString()
   //   return publicKey
   // },
-  async syncDelegatedCredentials({ dispatch, state, commit }) {
+  async syncSession({ dispatch, state, commit }) {
     const dappName = 'primitives'
-    const typeLocator = 'DelegatedCredentials'
+    const typeLocator = 'Session'
     const queryOpts = {
       limit: 1,
       startAt: 1,
       orderBy: [['expiresAt', 'desc']],
       where: [
-        ['delegateIdentityId', '==', state.identityId.toString()],
+        ['sessionIdentityId', '==', state.identityId.toString()],
         ['expiresAt', '>', process.env.STAY_LOGGED_IN ? 0 : timestamp()], // TODO deploy, enable credential check
         // ['expiresAt', '>', 0],
       ],
     } // TODO need to filter for contractId and userId as well, check for isValid
 
-    console.log('syncDelegatedCredentials', {
+    console.log('syncSession', {
       dappName,
       typeLocator,
       queryOpts,
@@ -1979,9 +2082,8 @@ export const actions = {
       queryOpts,
     })
     // console.log('result :>> ', result)
-    const delegatedCredential =
-      result && result[0] ? result[0].toJSON() : undefined
-    console.log('delegatedCredential :>> ', delegatedCredential)
+    const session = result && result[0] ? result[0].toJSON() : undefined
+    console.log('session :>> ', session)
 
     // Decrypt the decryption private key for DirectMessages
     // FIXME move decryption key to Identity
@@ -1995,13 +2097,13 @@ export const actions = {
     console.log('tmpPrivKey, tmpPubKey :>> ', tmpPrivKey, tmpPubKey)
     console.log('acc.getIdentityIds(); :>> ', acc.getIdentityIds())
 
-    if (delegatedCredential) {
+    if (session) {
       const receiverPrivKey = client.account
         .getIdentityHDKeyByIndex(0, 0)
         .privateKey.toString()
 
       const senderPubKey = (
-        await client.platform.identities.get(delegatedCredential.$ownerId)
+        await client.platform.identities.get(session.$ownerId)
       ).publicKeys[0].data
 
       console.log(
@@ -2014,13 +2116,13 @@ export const actions = {
         client.account.getIdentityIds()
       )
 
-      delegatedCredential.decryptPrivKey = decrypt(
+      session.pvtKey = decrypt(
         receiverPrivKey,
-        delegatedCredential.encDecryptPrivKey,
+        session.encPvtKey,
         senderPubKey
       ).data
     }
-    commit('setDelegatedCredentials', { delegatedCredential })
+    commit('setSession', { session })
   },
   async fetchSignups({ dispatch, commit, getters }) {
     console.log('fetchSignups()')
@@ -2279,6 +2381,7 @@ export const actions = {
         //   `https://us-central1-evodrip.cloudfunctions.net/evofaucet/drip/${address}`
         // ),
         this.$axios.get(`http://134.122.104.155:5050/drip/${address}`),
+        this.$axios.get(`http://127.0.0.1:5050/drip/${address}`),
       ]
       await Promise.race(reqs)
       console.log('... faucet dropped.')
@@ -2344,16 +2447,32 @@ export const actions = {
       },
     }
   ) {
-    if (typeLocator !== 'DelegatedCredentials') {
-      console.log('Querying documents...', { dappName, typeLocator, queryOpts })
-    }
+    console.log(
+      'client.getApps() :>> ',
+      client.getApps().get('primitives').contractId.toString()
+    )
+    // if (typeLocator !== 'Session') {
+    console.log(
+      'Querying documents...',
+      { dappName, typeLocator, queryOpts },
+      client.getApps().get(dappName).contractId.toString()
+    )
+
+    // }
     // commit('setSyncing', true)
     try {
-      const documents = await client.platform.documents.get(
+      let documents = await client.platform.documents.get(
         `${dappName}.${typeLocator}`,
         queryOpts
       )
-      console.log(`Result ${typeLocator}`, { documents })
+      console.log(
+        `Result ${dappName}.${typeLocator}`,
+        { queryOpts },
+        { documents }
+      )
+      if (`${dappName}.${typeLocator}` === 'jembe.jams') {
+        documents = await dispatch('validateDocumentSessionIdentity', documents)
+      }
       return documents
     } catch (e) {
       console.error('Something went wrong:', e, {

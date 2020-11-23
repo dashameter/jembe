@@ -73,7 +73,7 @@
               color="#008de4"
             >
               <v-icon
-                :disabled="!$store.getters.hasDelegatedCredentials"
+                :disabled="!$store.getters.hasSession"
                 @click.stop="follow(jam.userId)"
                 >{{
                   getiFollow(jam.userId)
@@ -103,7 +103,7 @@
             <div class="hoverblue ml-n2">
               <v-btn
                 icon
-                :disabled="!$store.getters.hasDelegatedCredentials"
+                :disabled="!$store.getters.hasSession"
                 @click.stop="replyTo()"
               >
                 <v-icon size="19px">mdi-comment-outline</v-icon>
@@ -117,7 +117,7 @@
             <div class="hovergreen">
               <v-btn
                 icon
-                :disabled="!$store.getters.hasDelegatedCredentials"
+                :disabled="!$store.getters.hasSession"
                 @click.stop="reJam(jam.$id)"
               >
                 <v-icon size="22px" class="mr-1">mdi-twitter-retweet</v-icon>
@@ -136,7 +136,7 @@
                     ? 'rgba(228, 68, 129, 0.911)'
                     : ''
                 "
-                :disabled="!$store.getters.hasDelegatedCredentials"
+                :disabled="!$store.getters.hasSession"
                 @click.stop="like(jam.$id)"
               >
                 <v-icon
@@ -160,13 +160,13 @@
             <div class="hoverblue">
               <v-btn
                 icon
-                :disabled="!$store.getters.hasDelegatedCredentials"
+                :disabled="!$store.getters.hasSession"
                 @click.stop="tip(jam.$id)"
               >
                 <v-icon
                   size="20px"
                   class="mr-1 dashicon"
-                  :disabled="!$store.getters.hasDelegatedCredentials"
+                  :disabled="!$store.getters.hasSession"
                   style="fill: #757575"
                   >$dash
                 </v-icon>
@@ -243,7 +243,7 @@ export default {
       'getiFollow',
     ]),
     toThreadLink() {
-      if (this.$store.getters.hasDelegatedCredentials) {
+      if (this.$store.getters.hasSession) {
         return '/' + this.jam.userName + '/status/' + this.jam.$id
       } else {
         return ''
@@ -358,7 +358,7 @@ export default {
       if (event.srcElement.className !== 'linkified') this.$router.push(href)
     },
     async showLoginNag() {
-      if (!this.$store.getters.hasDelegatedCredentials) {
+      if (!this.$store.getters.hasSession) {
         await this.showSnackbar({
           color: '#008de4',
           text: 'Please login first.',

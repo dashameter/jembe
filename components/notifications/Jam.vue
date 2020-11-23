@@ -68,7 +68,7 @@ export default {
   computed: {
     ...mapGetters(['getProfile', 'getJamById']),
     toThreadLink() {
-      if (this.$store.getters.hasDelegatedCredentials) {
+      if (this.$store.getters.hasSession) {
         return (
           '/' +
           this.getJamById(this.jam.reJamId).userName +

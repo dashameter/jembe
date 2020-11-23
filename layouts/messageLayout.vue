@@ -3,10 +3,7 @@
     <v-main>
       <v-row no-gutters class="flex-nowrap" justify="center">
         <v-col
-          v-if="
-            $vuetify.breakpoint.smAndUp &&
-            $store.getters.hasDelegatedCredentials
-          "
+          v-if="$vuetify.breakpoint.smAndUp && $store.getters.hasSession"
           style="max-width: 475px"
           cols="2"
         >
@@ -227,14 +224,14 @@ export default {
       }
     )
     await this.initOrCreateAccount({})
-    this.loopSyncDelegatedCredentials() // TODO phaseb, launch this userId specific after name entry
+    this.loopSyncSession() // TODO phaseb, launch this userId specific after name entry
   },
   mounted() {},
   methods: {
     ...mapActions([
       // 'initWallet',
       'initOrCreateAccount',
-      'syncDelegatedCredentials',
+      'syncSession',
       'resetStateKeepAccounts',
       'fetchJams',
       'refreshLikesInState',
@@ -253,32 +250,32 @@ export default {
     goto(route) {
       this.$router.push(route)
     },
-    async loopSyncDelegatedCredentials() {
+    async loopSyncSession() {
       if (this.$store.state.identityId === null) {
         await sleep(5000)
-        this.loopSyncDelegatedCredentials()
+        this.loopSyncSession()
         return
       }
-      // console.log('loopSyncDelegatedCredentials()')
-      await this.syncDelegatedCredentials()
+      // console.log('loopSyncSession()')
+      await this.syncSession()
 
       // console.log(
-      //   'Login state: state.delegatedCredentials',
-      //   this.$store.state.delegatedCredential
+      //   'Login state: state.session',
+      //   this.$store.state.session
       // )
 
       // State change to LoggedIn
       // TODO fix messagelayout.vue
-      // if (this.$store.getters.hasDelegatedCredentials && this.isIndexRoute) {
+      // if (this.$store.getters.hasSession && this.isIndexRoute) {
       //   this.$router.push('/discover')
       // }
 
       // State change to LoggedOut
-      if (!this.$store.getters.hasDelegatedCredentials && !this.isIndexRoute) {
+      if (!this.$store.getters.hasSession && !this.isIndexRoute) {
         this.logout()
       }
       await sleep(5000)
-      this.loopSyncDelegatedCredentials()
+      this.loopSyncSession()
     },
   },
 }

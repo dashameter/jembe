@@ -3,10 +3,7 @@
     <v-main>
       <v-row no-gutters class="flex-nowrap fill-height" justify="center">
         <v-col
-          v-if="
-            $vuetify.breakpoint.smAndUp &&
-            $store.getters.hasDelegatedCredentials
-          "
+          v-if="$vuetify.breakpoint.smAndUp && $store.getters.hasSession"
           cols="1"
           style="max-width: 475px"
         >
@@ -227,7 +224,7 @@ export default {
       }
     )
     await this.initOrCreateAccount({})
-    this.loopSyncDelegatedCredentials() // TODO phaseb, launch this userId specific after name entry
+    this.loopSyncSession() // TODO phaseb, launch this userId specific after name entry
     this.loopFetchNotifications()
   },
   mounted() {},
@@ -235,7 +232,7 @@ export default {
     ...mapActions([
       // 'initWallet',
       'initOrCreateAccount',
-      'syncDelegatedCredentials',
+      'syncSession',
       'resetStateKeepAccounts',
       'fetchJams',
       'refreshLikesInState',
@@ -258,7 +255,7 @@ export default {
       this.$router.push(route)
     },
     async loopFetchNotifications() {
-      if (this.$store.getters.hasDelegatedCredentials) {
+      if (this.$store.getters.hasSession) {
         const promises = [
           this.fetchLastSeen('notifications'),
           this.fetchNotifications(),
@@ -268,32 +265,32 @@ export default {
       await sleep(5000)
       this.loopFetchNotifications()
     },
-    async loopSyncDelegatedCredentials() {
-      console.log('loopSyncDelegatedCredentials')
+    async loopSyncSession() {
+      console.log('loopSyncSession')
       if (this.$store.state.identityId === null) {
-        await sleep(5000)
-        this.loopSyncDelegatedCredentials()
+        await sleep(1000)
+        this.loopSyncSession()
         return
       }
-      // console.log('loopSyncDelegatedCredentials()')
-      await this.syncDelegatedCredentials()
+      // console.log('loopSyncSession()')
+      await this.syncSession()
 
       // console.log(
-      //   'Login state: state.delegatedCredentials',
-      //   this.$store.state.delegatedCredential
+      //   'Login state: state.session',
+      //   this.$store.state.session
       // )
 
       // State change to LoggedIn
-      if (this.$store.getters.hasDelegatedCredentials && this.isIndexRoute) {
+      if (this.$store.getters.hasSession && this.isIndexRoute) {
         this.$router.push('/discover')
       }
 
       // State change to LoggedOut
-      if (!this.$store.getters.hasDelegatedCredentials && !this.isIndexRoute) {
+      if (!this.$store.getters.hasSession && !this.isIndexRoute) {
         this.logout()
       }
       await sleep(5000)
-      this.loopSyncDelegatedCredentials()
+      this.loopSyncSession()
     },
   },
 }

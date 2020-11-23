@@ -10,18 +10,19 @@ export default {
     MNEMONIC: process.env.NUXT_JEMBE_MNEMONIC || null,
     IDENTITYID: process.env.NUXT_JEMBE_IDENTITYID || null,
     JEMBE_CONTRACT_ID:
-      process.env.NUXT_JEMBE_CONTRACT_ID ||
-      '4ZxFDKXzcMZu3ii9w4pvtQirb3QVrbyjwkgQfMsYCVNk',
+      process.env[`NUXT_JEMBE_CONTRACT_ID_${process.env.NUXT_ENV_RUN}`] ||
+      'DfprkeWZ9BkXUgbfsHVKpgEMetUsPQMYEBQyaQcrnfXD',
     PRIMITIVES_CONTRACT_ID:
-      process.env.NUXT_PRIMITIVES_CONTRACT_ID ||
+      process.env[`NUXT_PRIMITIVES_CONTRACT_ID_${process.env.NUXT_ENV_RUN}`] ||
       'J2jZkuK53qXQybna2UUYTHGA48XKRWFucyhi6cLk3foc',
     DIRECTMESSAGE_CONTRACT_ID:
-      process.env.NUXT_DIRECTMESSAGE_CONTRACT_ID ||
-      '1cJrmi1UNYUCeBuMQPZEdMNtP3MQwMGH2rEKRvHNojS',
+      process.env[
+        `NUXT_DIRECTMESSAGE_CONTRACT_ID_${process.env.NUXT_ENV_RUN}`
+      ] || '1cJrmi1UNYUCeBuMQPZEdMNtP3MQwMGH2rEKRvHNojS',
     DATASTORE_CONTRACT_ID:
-      process.env.NUXT_PRIMITIVES_CONTRACT_ID ||
+      process.env[`NUXT_DATASTORE_CONTRACT_ID_${process.env.NUXT_ENV_RUN}`] ||
       'CCRiZKKkCJyM7PzVyMBwGwUMQV1R2fYTHrE6N9Gw8UqL',
-    STAY_LOGGED_IN: !!process.env.NUXT_DATASTORE_STAY_LOGGED_IN,
+    STAY_LOGGED_IN: !!process.env.NUXT_JEMBE_STAY_LOGGED_IN,
     DAPIADDRESSES: process.env.NUXT_DAPIADDRESSES
       ? JSON.parse(process.env.NUXT_DAPIADDRESSES)
       : undefined,
