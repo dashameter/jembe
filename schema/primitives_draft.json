@@ -1,0 +1,171 @@
+{
+    "SignupRequest": {
+        "Request": {
+            "$ref": "#/definitions/Request"
+        },
+        "Details": {},
+        "additionalProperties": false
+    },
+    "Delegates": {
+        "required": [
+            "unixTimestampExpiration",
+            "pubKey",
+            "encPvtKey",
+            "delegateIdentityId"
+        ],
+        "unixTimestampExpiration": {
+            "type": "integer"
+        },
+        "pubKey": {
+            "type": "string"
+        },
+        "encPvtKey": {
+            "type": "string"
+        },
+        "delegateIdentityId": {
+            "type": "string",
+            "minLength": 42,
+            "maxLength": 44,
+            "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+        }
+    },
+    "ephemeral_PaymentRequest": {
+        "required": [
+            "paymentDetails.toAddress",
+            "paymentDetails.satoshis"
+        ],
+        "Request": {
+            "$ref": "#/definitions/Request"
+        },
+        "Details": {
+            "toAddress": "string",
+            "satoshis": "integer"
+        },
+        "additionalProperties": false
+    },
+    "ephemeral_DocumentActionRequest": {
+        "Request": {
+            "$ref": "#/definitions/Request"
+        },
+        "Details": {
+            "action": {
+                "type": "string",
+                "enum": [
+                    "create",
+                    "update",
+                    "delete"
+                ]
+            },
+            "documentJson": {
+                "type": "string"
+            }
+        }
+    },
+    "Datastore": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "ownerDpnsDocId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "data",
+            "ownderDpnsDocId"
+        ],
+        "properties": {
+            "data": {
+                "type": "string"
+            },
+            "dataType": {
+                "type": "string",
+                "enum": [
+                    "blob",
+                    "string",
+                    "encrypted"
+                ]
+            },
+            "ownerDpnsDocId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "tags": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]{0,62}]$"
+                }
+            }
+        },
+        "additionalProperties": false,
+        "comments": [
+            "// Test how much more data we can store if we link to a separate blob docType with fewer property fields",
+            "// Tags allow other dApps to suggest pre-propulate the users preferences with sane defaults which the user can overwrite, e.g. tag 'avatar'",
+            "// Encrypted allows to store sensitive information like 'email address' or 'shipping address' and enables a user to view their own data from any dApp they connect to, then re-encrypt the data with the vendors public key and send it through the DM docType to the vendor",
+            "// We should also store http linked avatars in here so dApps can pull them in as defaults"
+        ]
+    },
+    "definitions": {
+        "Request": {
+            "indices": [
+                {
+                    "unique": false,
+                    "properties": [
+                        {
+                           "accountDocId": "asc"
+                        }
+                    ]
+                },
+                {
+                    "unique": false,
+                    "properties": [
+                        {
+                            "contractId": "asc"
+                        }
+                    ]
+                },
+                {
+                    "unique": true,
+                    "properties": [
+                        {
+                            "unixTimestamp": "asc"
+                        }
+                    ]
+                }
+            ],
+            "properties": {
+                "acountDocId": {
+                    "type": "string",
+                    "minLength": 42,
+                    "maxLength": 44,
+                    "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+                },
+                "uidPin": {
+                    "type": "string"
+                },
+                "contractId": {
+                    "type": "string",
+                    "minLength": 42,
+                    "maxLength": 44,
+                    "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+                },
+                "dappName": {
+                    "type": "string"
+                },
+                "unixTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "comments": [
+        "// TODO test if definitions can include required / indices",
+        "// TODO will dpp deduplicate / delta unchanged property fields ?",
+        "// TODO we might want variables in DocumentActionRequest.Details.documentJson to be replaced by PW with values",
+        "// TODO we might need to create a payment doc attaching sender information to count tips if we can't derive xpubkeys and query address balances",
+        "// Is it nescessary to create an index over the $ownderId which is not part of data?"
+    ]
+}

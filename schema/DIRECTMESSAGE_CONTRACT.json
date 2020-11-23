@@ -1,0 +1,224 @@
+{
+    "dm": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "senderUserId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "receiverUserId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "$createdAt",
+            "senderUserId",
+            "receiverUserId",
+            "receiverUserName",
+            "senderUserName",
+            "encMessage",
+            "pubKey"
+        ],
+        "properties": {
+            "senderUserId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "receiverUserId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "senderUserName": {
+                "type": "string",
+                "pattern": "^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9])$",
+                "maxLength": 63,
+                "minLength": 3,
+                "description": "Domain label. e.g. 'Bob'."
+            },
+            "receiverUserName": {
+                "type": "string",
+                "pattern": "^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9])$",
+                "maxLength": 63,
+                "minLength": 3,
+                "description": "Domain label. e.g. 'Bob'."
+            },
+            "encMessage": {
+                "type": "string"
+            },
+            "pubKey": {
+                "type": "string",
+                "maxLength": 44,
+                "minLength": 44,
+                "pattern": "^([A-Za-z0-9+/])+$"
+            }
+        },
+        "additionalProperties": false
+    },
+    "contacts": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "senderUserId": "asc"
+                    },
+                    {
+                        "receiverUserId": "asc"
+                    }
+                ],
+                "unique": true
+            },
+            {
+                "properties": [
+                    {
+                        "receiverUserId": "asc"
+                    },
+                    {
+                        "senderUserId": "asc"
+                    }
+                ],
+                "unique": true
+            }
+        ],
+        "required": [
+            "$createdAt",
+            "senderUserId",
+            "receiverUserId",
+            "receiverUserName",
+            "senderUserName"
+        ],
+        "properties": {
+            "senderUserId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "receiverUserId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "senderUserName": {
+                "type": "string",
+                "pattern": "^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9])$",
+                "maxLength": 63,
+                "minLength": 3,
+                "description": "Domain label. e.g. 'Bob'."
+            },
+            "receiverUserName": {
+                "type": "string",
+                "pattern": "^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9])$",
+                "maxLength": 63,
+                "minLength": 3,
+                "description": "Domain label. e.g. 'Bob'."
+            },
+            "accepted": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    },
+    "seen": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "assetId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "$createdAt",
+            "userId",
+            "assetId"
+        ],
+        "properties": {
+            "userId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "assetId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            }
+        },
+        "additionalProperties": false
+    },
+    "keys": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "$ownerId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "$createdAt",
+            "$ownerId",
+            "pubKey",
+            "encPrivKey"
+        ],
+        "properties": {
+            "pubKey": {
+                "type": "string"
+            },
+            "encPrivKey": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    }
+}

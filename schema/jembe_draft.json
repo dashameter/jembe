@@ -1,0 +1,145 @@
+{
+    "jam": {
+        "properties": {
+            "ownerName": {
+                "type": "string"
+            },
+            "text": {
+                "type": "string"
+            },
+            "replyJamId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "reJamId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "mentions": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "pattern": "^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9])$"
+                }
+            },
+            "tags": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]{0,62}]$"
+                }
+            },
+            "media": {
+                "type": "string",
+                "pattern": "^(http://|https://|blobId:).+$"
+            },
+            "address": {
+                "type": "string",
+                "pattern": "^X[1-9A-HJ-NP-Za-km-z]{33}$"
+            },
+            "unixTimestamp": {
+                "type": "integer"
+            }
+        },
+        "additionalProperties": false,
+        "comments": [
+            "// TODO test array indices",
+            "// TODO if we need more indices, duplicate properties to an index docType and index there?",
+            "// We attach an unique Dash Address to every jam (asset doc) so users can tip it and we can display the cummulative amount of tips received by that asset, the address doesn't have to by owned by the poster ($ownerId) to benefit a third party"
+        ]
+    },
+    "profile": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "ownerDpnsDocId": "asc"
+                    }
+                ]
+            }
+        ],
+        "propteries": {
+            "avatar": {
+                "type": "string",
+                "pattern": "^(http://|https://|blobId:).+$"
+            },
+            "theme": {
+                "type": "string",
+                "pattern": "^(http://|https://|blobId:).+$"
+            },
+            "statusMessage": {
+                "type": "string"
+            }
+        },
+        "ownerDpnsDocId": {
+            "type": "string",
+            "pattern": "<needs pattern>"
+        }
+    },
+    "message": {
+        "properties": {
+            "encryptedText": {
+                "type": "string"
+            },
+            "senderDpnsDocId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "receiverDpnsDocId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "referenceAssetId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "unixTimestamp": {
+                "type": "integer"
+            },
+            "media": {
+                "type": "string",
+                "pattern": "^(http://|https://|blobId:).+$"
+            }
+        },
+        "additionalProperties": false,
+        "comments": [
+            "// media type blobId links to blobContract $docId to pull in dataURI blobbed media",
+            "// media.pattern needs to be extended with $docId regexp for blobId"
+        ]
+    },
+    "seen": {
+        "properties": {
+            "assetId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "ownerId": {
+                "type": "string",
+                "minLength": 42,
+                "maxLength": 44,
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
+            },
+            "unixTimestamp": {
+                "type": "integer"
+            }
+        }
+    },
+    "additionalProperties": false,
+    "comments": [
+        "// dApp can you dataBlob contract to search for existing / default avatars and show them for the user to choose",
+        "// media type blobId links to blobContract $docId to pull in dataURI blobbed media",
+        "// media.pattern needs to be extended with $docId regexp for blobId"
+    ]
+}

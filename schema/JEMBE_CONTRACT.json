@@ -1,0 +1,479 @@
+{
+    "jams": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "$updatedAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "replyToJamId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "reJamId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userName": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "opUserId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "opUserName": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "text",
+            "userId",
+            "opUserId",
+            "opUserName",
+            "userName",
+            "replyToJamId",
+            "reJamId",
+            "$createdAt",
+            "$updatedAt"
+        ],
+        "properties": {
+            "text": {
+                "type": "string"
+            },
+            "userId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "reJamId": {
+                "type": "string",
+                "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
+                "maxLength": 44,
+                "minLength": 0
+            },
+            "userName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            },
+            "opUserId": {
+                "type": "string",
+                "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
+                "maxLength": 44,
+                "minLength": 0
+            },
+            "opUserName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            },
+            "replyToJamId": {
+                "type": "string",
+                "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
+                "maxLength": 44,
+                "minLength": 0
+            },
+            "mentionedUserIds": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                    "maxLength": 44,
+                    "minLength": 42
+                },
+                "maxItems": 5,
+                "minItems": 0
+            }
+        },
+        "additionalProperties": false
+    },
+    "likes": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "jamId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userName": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "opUserId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "opUserName": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "isLiked": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "jamId",
+            "userId",
+            "userName",
+            "opUserId",
+            "opUserName",
+            "isLiked",
+            "$createdAt"
+        ],
+        "properties": {
+            "jamId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "userId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "isLiked": {
+                "type": "boolean"
+            },
+            "userName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            },
+            "opUserId": {
+                "type": "string",
+                "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
+                "maxLength": 44,
+                "minLength": 0
+            },
+            "opUserName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            }
+        },
+        "additionalProperties": false
+    },
+    "follows": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "$createdAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "jammerId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "userId",
+            "jammerId",
+            "isFollowing",
+            "$createdAt"
+        ],
+        "properties": {
+            "userId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "jammerId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "isFollowing": {
+                "type": "boolean"
+            }
+        },
+        "additionalProperties": false
+    },
+    "profile": {
+        "indices": [
+            {
+                "unique": false,
+                "properties": [
+                    {
+                        "$ownerId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "$createdAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "$updatedAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userId": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userNormalizedLabel": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "userNormalizedLabel",
+            "userId",
+            "$updatedAt",
+            "$createdAt"
+        ],
+        "properties": {
+            "theme": {
+                "type": "string"
+            },
+            "avatar": {
+                "type": "string"
+            },
+            "userId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "statusMessage": {
+                "type": "string"
+            },
+            "userNormalizedLabel": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            }
+        },
+        "additionalProperties": false
+    },
+    "lastSeen": {
+        "indices": [
+            {
+                "properties": [
+                    {
+                        "eventType": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "timestamp": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "userName": "desc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "eventType",
+            "timestamp",
+            "userId",
+            "userName"
+        ],
+        "properties": {
+            "eventType": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            },
+            "userId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "userName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            },
+            "timestamp": {
+                "type": "number"
+            }
+        },
+        "additionalProperties": false
+    },
+    "mentions": {
+        "indices": [
+            {
+                "unique": true,
+                "properties": [
+                    {
+                        "jamId": "asc"
+                    },
+                    {
+                        "index": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "mentionedUserId": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "$createdAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "opUserId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "mentionedUserId",
+            "mentionedUserName",
+            "opUserId",
+            "opUserName",
+            "jamId",
+            "index",
+            "$createdAt"
+        ],
+        "properties": {
+            "index": {
+                "type": "number",
+                "maximum": 4,
+                "minimum": 0
+            },
+            "jamId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "opUserId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "opUserName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            },
+            "mentionedUserId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "mentionedUserName": {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 0
+            }
+        },
+        "additionalProperties": false
+    }
+}

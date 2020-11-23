@@ -1,0 +1,233 @@
+<template>
+  <v-col
+    class="flex-nowrap"
+    justify="center"
+    :class="{
+      fullscreen: $vuetify.breakpoint.mdAndUp,
+      halfscreen: $vuetify.breakpoint.smAndDown,
+    }"
+  >
+    <v-row justify="center" no-gutters>
+      <v-col class="flex-nowrap pt-2" style="max-width: 600px">
+        <v-container class="pa-0 borders pt-0">
+          <v-row align="center" no-gutters>
+            <v-btn class="pl-2" icon color="#008de4" @click="$router.go(-1)"
+              ><v-icon>mdi-arrow-left</v-icon></v-btn
+            >
+            <span class="font-header pl-3"> {{ jamUser }} </span>
+          </v-row>
+          <v-card flat tile class="my-2">
+            <!-- <v-img :src="require('~/assets/avataaar.png')" height="194"></v-img> -->
+            <v-img
+              :src="getProfile(jamUser).theme"
+              height="194"
+              width="750"
+            ></v-img>
+            <v-avatar size="135" class="avatar" color="white">
+              <v-img :src="getProfile(jamUser).avatar" alt="" />
+            </v-avatar>
+            <v-list-item>
+              <v-list-item-content>
+                <v-list-item-title class="headline"
+                  >{{ jamUser
+                  }}<v-btn
+                    v-if="
+                      jamUser.toLowerCase() ===
+                      $store.state.name.label.toLowerCase()
+                    "
+                    absolute
+                    right
+                    class="mb-1"
+                    color="primary"
+                    elevation="0"
+                    outlined
+                    dense
+                    rounded
+                    style="float: right"
+                    @click="showOnboardDialog = true"
+                    >{{ editProfileButtonText }}</v-btn
+                  >
+                  <v-btn
+                    v-else
+                    absolute
+                    right
+                    max-width="100px"
+                    :loading="isFollowLoading"
+                    dense
+                    outlined
+                    rounded
+                    class="mt-n3 lowercase"
+                    font-weight="bold"
+                    style="color: #008de4"
+                    :disabled="!$store.getters.hasDelegatedCredentials"
+                    @click.stop="followByUsername()"
+                    >{{ amIFollowingJammer ? 'Following' : 'Follow' }}
+                  </v-btn>
+                </v-list-item-title>
+                <v-list-item-subtitle>{{
+                  getProfile(jamUser).statusMessage
+                }}</v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-card-text class="subtitle-1">
+              <p>
+                <v-icon>mdi-calendar-month</v-icon> Joined
+                {{ getUserSignupTime(jamUser) }}
+              </p>
+              <p>
+                <span style="font-weight: bold">{{
+                  getUserFollowingCount(jamUser)
+                }}</span>
+                Following
+                <span style="font-weight: bold" class="ml-2">{{
+                  getUserFollowersCount(jamUser)
+                }}</span>
+                Followers
+              </p>
+            </v-card-text>
+          </v-card>
+
+          <v-tabs fixed-tabs="" @change="refreshTab($event)">
+            <v-tab exact :to="`/${jamUser}`"> Jams </v-tab>
+            <v-tab exact :to="`/${jamUser}/with_replies`"
+              ><span style="white-space: nowrap"> Jams & Replies</span>
+            </v-tab>
+            <v-tab disabled :to="`/${jamUser}/followers`"> Followers </v-tab>
+            <v-tab disabled :to="`/${jamUser}/likes`"> Likes </v-tab>
+            <!-- <v-tab-item>
+          <JamsByUser :key="tabRefresh" :show-replies="false" />
+        </v-tab-item>
+        <v-tab-item> </v-tab-item>
+        <v-tab-item>
+          <v-card flat tile>
+            <v-container fluid style="maxwidth: 600px; display: flex;">
+              <Usercard is-followed />
+            </v-container>
+          </v-card>
+        </v-tab-item>
+        <v-tab-item>
+          <Tweet is-liked />
+        </v-tab-item> -->
+          </v-tabs>
+          <JamsByUser v-if="$route.name === 'profile'" :show-replies="false" />
+          <nuxt-child />
+          <OnboardDialog
+            v-if="showOnboardDialog"
+            :dialog="showOnboardDialog"
+            @close="showOnboardDialog = false"
+          />
+        </v-container>
+      </v-col>
+      <v-col
+        v-if="$vuetify.breakpoint.mdAndUp"
+        class="pt-0"
+        style="max-width: 320px"
+      >
+        <searchBar />
+      </v-col>
+    </v-row>
+  </v-col>
+</template>
+
+<script>
+import { mapActions, mapGetters } from 'vuex'
+
+import Usercard from '~/components/usercard'
+import JamsByUser from '~/components/profile/JamsByUser'
+import OnboardDialog from '~/components/profile/onboarding/OnboardDialog'
+import searchBar from '~/components/searchBar'
+
+// const timestamp = () => Math.floor(Date.now())
+
+export default {
+  // eslint-disable-next-line vue/no-unused-components
+  components: { searchBar, JamsByUser, Usercard, OnboardDialog },
+  data() {
+    return {
+      showOnboardDialog: false,
+      amIFollowingJammer: false,
+      isFollowLoading: false,
+      jammerId: undefined,
+      jamUser: '',
+      tabRefresh: 0,
+      profile: {},
+    }
+  },
+  computed: {
+    ...mapGetters([
+      'getProfile',
+      'getUserSignupTime',
+      'getUserFollowingCount',
+      'getUserFollowersCount',
+    ]),
+    editProfileButtonText() {
+      return this.getProfile(this.$store.state.name.label).statusMessage
+        ? 'Edit Profile'
+        : 'Setup Profile'
+    },
+  },
+  async created() {
+    this.jamUser = this.$route.params.profile
+    const dpnsUser = await this.resolveUsername(this.jamUser)
+
+    if (dpnsUser) {
+      this.jammerId = dpnsUser.$id
+      this.amIFollowingJammer = this.$store.getters.getiFollow(this.jammerId)
+
+      this.fetchUserInfo({ userName: this.jamUser, forceRefresh: true })
+    }
+  },
+  methods: {
+    ...mapActions([
+      'queryDocuments',
+      'submitDocument',
+      'fetchUserInfo',
+      'resolveUsername',
+      'followJammer',
+      'showSnackbar',
+    ]),
+    refreshTab(number) {
+      this.tabRefresh += 1
+    },
+    async followByUsername() {
+      this.isFollowLoading = true
+      await this.followJammer({
+        jammerId: this.jammerId,
+        userName: this.jamUser,
+        isFollowing: !this.amIFollowingJammer,
+      })
+      this.isFollowLoading = false
+      this.amIFollowingJammer = !this.amIFollowingJammer
+      this.$forceUpdate()
+      if (this.amIFollowingJammer === true) {
+        this.showSnackbar({
+          text: `You are following: ${this.jamUser}`,
+          color: '#008de4',
+        })
+      } else if (this.amIFollowingJammer === false) {
+        this.showSnackbar({
+          text: `You stopped following: ${this.jamUser}`,
+          color: '#008de4',
+        })
+      }
+    },
+  },
+}
+</script>
+
+<style scoped>
+.avatar {
+  margin-top: -100px;
+  margin-left: 10px;
+  border: white;
+  border-style: solid;
+  border-width: 4px;
+}
+.font-header {
+  color: rgba(20, 23, 26, 0.8) !important;
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Montserrat';
+}
+</style>
