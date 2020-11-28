@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source ~/.bashrc
+source ~/.evoenv
 
 export NUXT_ENV_RUN="local"
 

@@ -2334,6 +2334,14 @@ export const actions = {
     }, 500000) // TODO set sane timeout
 
     client.account = await client.wallet.getAccount({ index: 0 })
+    console.log('client :>> ', client)
+    console.log('client.wallet :>> ', client.wallet)
+    console.log('client.account :>> ', client.account)
+    console.log('client.wallet.mnemonic :>> ', client.wallet.mnemonic)
+    console.log(
+      'client.account.getIdentityIds()[0] :>> ',
+      client.account.getIdentityIds()[0]
+    )
     const tmpPrivKey = client.account
       .getIdentityHDKeyByIndex(0, 0)
       .privateKey.toString()
