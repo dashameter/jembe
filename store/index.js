@@ -2479,7 +2479,13 @@ export const actions = {
         { documents }
       )
       if (`${dappName}.${typeLocator}` === 'jembe.jams') {
-        documents = await dispatch('validateDocumentSessionIdentity', documents)
+        // Ignore validation for local development
+        if (!process.env.STAY_LOGGED_IN) {
+          documents = await dispatch(
+            'validateDocumentSessionIdentity',
+            documents
+          )
+        }
       }
       return documents
     } catch (e) {
