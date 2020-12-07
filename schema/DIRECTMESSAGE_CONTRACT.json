@@ -29,8 +29,7 @@
             "receiverUserId",
             "receiverUserName",
             "senderUserName",
-            "encMessage",
-            "pubKey"
+            "encMessage"
         ],
         "properties": {
             "senderUserId": {
@@ -60,13 +59,8 @@
                 "description": "Domain label. e.g. 'Bob'."
             },
             "encMessage": {
-                "type": "string"
-            },
-            "pubKey": {
                 "type": "string",
-                "maxLength": 44,
-                "minLength": 44,
-                "pattern": "^([A-Za-z0-9+/])+$"
+                "$comment": "v2"
             }
         },
         "additionalProperties": false
@@ -184,39 +178,6 @@
                 "minLength": 42,
                 "maxLength": 44,
                 "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$"
-            }
-        },
-        "additionalProperties": false
-    },
-    "keys": {
-        "indices": [
-            {
-                "properties": [
-                    {
-                        "$createdAt": "asc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "$ownerId": "asc"
-                    }
-                ]
-            }
-        ],
-        "required": [
-            "$createdAt",
-            "$ownerId",
-            "pubKey",
-            "encPrivKey"
-        ],
-        "properties": {
-            "pubKey": {
-                "type": "string"
-            },
-            "encPrivKey": {
-                "type": "string"
             }
         },
         "additionalProperties": false

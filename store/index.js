@@ -695,19 +695,17 @@ export const actions = {
 
       receivedResult.forEach((element) => {
         const decryptedMessage = { ...element.toJSON() }
-        console.log('state.dele :>> ', state.dele)
-        console.log(
-          'state.session.decryptPrivKey :>> ',
-          state.session.decryptPrivKey
+
+        const encMessage = JSON.parse(
+          Buffer.from(element.data.encMessage, 'base64')
         )
-        console.log('element.data.encMessage:>> ', element.data.encMessage)
-        console.log('element.data.pubKey:>> ', element.data.pubKey)
+
         decryptedMessage.encMessage = dsm.decrypt(
-          state.session.decryptPrivKey,
-          element.data.encMessage,
-          element.data.pubKey,
-          { binary: true }
-        )
+          state.session.pvtKey,
+          encMessage.msg.map((x) => x[1]),
+          encMessage.senderPubKey,
+          {}
+        )[0][1]
 
         directMessage.dm.push(decryptedMessage)
       })
@@ -730,12 +728,16 @@ export const actions = {
 
         console.log('decryptedMessage :>> ', decryptedMessage)
 
-        decryptedMessage.encMessage = dsm.decrypt(
-          state.session.decryptPrivKey,
-          element.data.encMessage,
-          element.data.pubKey,
-          { binary: true }
+        const encMessage = JSON.parse(
+          Buffer.from(element.data.encMessage, 'base64')
         )
+
+        decryptedMessage.encMessage = dsm.decrypt(
+          state.session.pvtKey,
+          encMessage.msg.map((x) => x[1]),
+          encMessage.senderPubKey,
+          {}
+        )[0][1]
 
         console.log('decryptedMessage :>> ', decryptedMessage)
         directMessage.dm.push(decryptedMessage)
@@ -773,14 +775,33 @@ export const actions = {
     )
     console.log('dpnsChatPartner :>> ', dpnsChatPartner)
 
-    const chatPartnerPubKey = (
-      await client.platform.identities.get(
-        dpnsChatPartner.records.dashUniqueIdentityId
-      )
-    ).publicKeys[0].data
+    // const chatPartnerPubKey = (
+    //   await client.platform.identities.get(
+    //     dpnsChatPartner.records.dashUniqueIdentityId
+    //   )
+    // ).publicKeys[0].data.toString('base64')
+
+    const chatPartnerPubKeyDoc = await dispatch('queryDocuments', {
+      dappName: 'primitives',
+      typeLocator: 'Session',
+      queryOpts: {
+        limit: 1,
+        startAt: 1,
+        orderBy: [['$createdAt', 'desc']],
+        where: [
+          ['$ownerId', '==', dpnsChatPartner.records.dashUniqueIdentityId],
+        ],
+      },
+    })
+
+    const chatPartnerPubKey = chatPartnerPubKeyDoc[0].toJSON().pubKey
+
+    console.log('chatPartnerPubKey :>> ', chatPartnerPubKey)
 
     // Retrieve receiver publickey of my main identity
-    const mainIdentityPubKey = state.session.decryptPubKey
+    const mainIdentityPubKey = state.session.pubKey
+
+    console.log('mainIdentityPubKey :>> ', mainIdentityPubKey)
 
     // Retrieve sender private key for tmp identity
     const acc = await client.wallet.getAccount({ index: 0 })
@@ -789,29 +810,41 @@ export const actions = {
       .getIdentityHDKeyByIndex(0, 0)
       .privateKey.toString()
 
+    console.log('senderPrivKey :>> ', senderPrivKey)
+
     // Retrieve sender public key for tmp identity
     const senderPubKey = acc
       .getIdentityHDKeyByIndex(0, 0)
       .privateKey.publicKey.toBuffer()
       .toString('base64')
 
-    const msg = dsm
-      .encrypt(
-        senderPrivKey,
-        directMessageText,
-        [chatPartnerPubKey, mainIdentityPubKey],
-        { binary: true }
-      )
-      .toString('base64')
+    console.log('senderPubKey :>> ', senderPubKey)
 
+    const msg = dsm.encrypt(
+      senderPrivKey,
+      directMessageText,
+      [chatPartnerPubKey, mainIdentityPubKey],
+      {}
+    )
+    // .toString('base64')
+
+    console.log('msg :>> ', msg)
+
+    const encMessageObj = { senderPubKey, msg }
+    console.log('encMessageObj :>> ', encMessageObj)
+
+    const encMessage = Buffer.from(JSON.stringify(encMessageObj)).toString(
+      'base64'
+    )
+
+    console.log('encMessage :>> ', encMessage)
     // Prepare `type: dm` DirectMessage document
     const doc = {
-      encMessage: msg,
+      encMessage,
       senderUserId: state.name.userId,
       senderUserName: state.name.label,
       receiverUserId: chatPartnerUserId,
       receiverUserName: chatPartnerUserName,
-      pubKey: senderPubKey,
     }
 
     console.log('doc :>> ', doc)
@@ -902,10 +935,10 @@ export const actions = {
         identity
       )
 
-      console.log('document submitted result :>> ', result.toJSON())
+      console.log('document submitted result :>> ', result)
 
       // Add newly contacted chartPartner to contactList state tree
-      result.create.forEach((doc) => {
+      result.transitions.forEach((doc) => {
         if (doc.type === 'contacts') {
           commit('addContactToList', doc)
         }
