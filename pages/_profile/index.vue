@@ -9,9 +9,13 @@
   >
     <v-row justify="center" no-gutters>
       <v-col class="flex-nowrap pt-2" style="max-width: 600px">
-        <v-container class="pa-0 borders pt-0">
+        <v-container class="pa-0 borders pt-0" style="height: 100vh">
           <v-row align="center" no-gutters>
-            <v-btn class="pl-2" icon color="#008de4" @click="$router.go(-1)"
+            <v-btn
+              class="pl-2"
+              icon
+              color="#008de4"
+              @click="$router.push({ path: '../discover' })"
               ><v-icon>mdi-arrow-left</v-icon></v-btn
             >
             <span class="font-header pl-3"> {{ jamUser }} </span>
@@ -75,26 +79,38 @@
                 <v-icon>mdi-calendar-month</v-icon> Joined
                 {{ getUserSignupTime(jamUser) }}
               </p>
-              <p>
-                <span style="font-weight: bold">{{
-                  getUserFollowingCount(jamUser)
-                }}</span>
-                Following
-                <span style="font-weight: bold" class="ml-2">{{
-                  getUserFollowersCount(jamUser)
-                }}</span>
-                Followers
+              <p class="follow">
+                <nuxt-link :to="'/' + jamUser + '/follows/following'">
+                  <span
+                    style="font-weight: bold; color: black"
+                    class="follow"
+                    >{{ getUserFollowingCount(jamUser) }}</span
+                  >
+                  Following
+                </nuxt-link>
+                <nuxt-link :to="'/' + jamUser + '/follows/followers'">
+                  <span
+                    style="font-weight: bold; color: black"
+                    class="ml-2 follow"
+                    >{{ getUserFollowersCount(jamUser) }}</span
+                  >
+                  Followers
+                </nuxt-link>
               </p>
             </v-card-text>
           </v-card>
 
-          <v-tabs fixed-tabs="" @change="refreshTab($event)">
+          <!-- mobile-breakpoint="640px" -->
+          <v-tabs fixed-tabs="" show-arrows="" @change="refreshTab($event)">
+            <v-tabs-slider color="teal lighten-3"></v-tabs-slider>
             <v-tab exact :to="`/${jamUser}`"> Jams </v-tab>
             <v-tab exact :to="`/${jamUser}/with_replies`"
               ><span style="white-space: nowrap"> Jams & Replies</span>
             </v-tab>
-            <v-tab disabled :to="`/${jamUser}/followers`"> Followers </v-tab>
-            <v-tab disabled :to="`/${jamUser}/likes`"> Likes </v-tab>
+            <!-- <v-tab :to="`/${jamUser}/following`"> Following </v-tab>
+            <v-tab :to="`/${jamUser}/followers`"> Followers </v-tab> -->
+            <v-tab disabled :to="`/${jamUser}/media`"> Media </v-tab>
+            <v-tab :to="`/${jamUser}/likes`"> Likes </v-tab>
             <!-- <v-tab-item>
           <JamsByUser :key="tabRefresh" :show-replies="false" />
         </v-tab-item>
@@ -229,5 +245,19 @@ export default {
   font-size: 20px;
   font-weight: bold;
   font-family: 'Montserrat';
+}
+/* .follow-links {
+  max-height: 15px !important;
+  height: 15px !important;
+  padding-top: 10px;
+  padding-bottom: 10px;
+} */
+.follow a {
+  text-decoration: none !important;
+  color: #787878 !important;
+  /* color: rgba(0, 0, 0, 0.601); */
+}
+.follow a:hover {
+  text-decoration: underline !important;
 }
 </style>

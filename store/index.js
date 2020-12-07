@@ -11,6 +11,8 @@ import hashtag from 'linkifyjs/plugins/hashtag'
 mention(linkify)
 hashtag(linkify)
 
+console.log('process.env:>> ', process.env)
+
 const $dappName = 'Jembe'
 const $dappIcon = ''
 
@@ -101,6 +103,7 @@ const getInitState = () => {
     dpns: {},
     userSignups: {},
     follows: { following: {}, followers: {} },
+    likedJamsByUsername: {},
     likesCount: {},
     commentsCount: {},
     rejamsCount: {},
@@ -152,6 +155,12 @@ export const getters = {
       return null
     }
   },
+  // getLastPartnerMessage: (state) => (chatPartnerUserId) => {
+  //   const chatPartnerMessages = this.getDirectMessages(
+  //     chatPartnerUserId
+  //   ).filter((message) => message.senderUserId === chatPartnerUserId)
+  //   return chatPartnerMessages[chatPartnerMessages.length - 1]
+  // },
   badgeCount: (state) => (eventType) =>
     state.notifications.filter((n) => n.$createdAt > state.lastSeen[eventType])
       .length,
@@ -189,6 +198,14 @@ export const getters = {
     })
 
     return directMessages
+  },
+  getUserFollowing: (state) => (userName) => {
+    const following = state.follows.following[userName.toLowerCase()]
+    return following ? following.docs : []
+  },
+  getUserFollowers: (state) => (userName) => {
+    const followers = state.follows.followers[userName.toLowerCase()]
+    return followers ? followers.docs : []
   },
   getiFollow: (state) => (jammerId) => {
     const following = state.follows.following[state.name.label.toLowerCase()]
@@ -247,6 +264,9 @@ export const getters = {
   getiLiked: (state) => (jamId) => {
     return state.likesCount[jamId] ? state.likesCount[jamId].iLiked : false
   },
+  getLikedJamsByUsername: (state) => (userName) => {
+    return state.likedJamsByUsername[userName] || []
+  },
 }
 
 export const mutations = {
@@ -257,6 +277,9 @@ export const mutations = {
       Vue.set(state.validSessionIdentities, session.sessionIdentityId, [
         session,
       ])
+  },
+  setLikedJamsByUsername(state, { jams, userName }) {
+    Vue.set(state.likedJamsByUsername, userName, jams)
   },
   setLastSeen(state, { eventType, lastSeenTimestamp }) {
     Vue.set(state.lastSeen, eventType, lastSeenTimestamp)
@@ -441,6 +464,7 @@ export const mutations = {
     state.isSyncing = isSyncing
   },
 }
+
 export const actions = {
   async fetchValidSessionIdentity({ dispatch, commit, getters }, doc) {
     let validSessionIdentity = getters.getValidSessionIdentity(doc)
@@ -544,6 +568,45 @@ export const actions = {
       doc,
     })
     console.log('seen', lastSeenTimestampResult)
+  },
+  async fetchLikesByUser({ commit, dispatch, state }, { userId, userName }) {
+    const queryOpts = {
+      limit: 20,
+      startAt: 1,
+      orderBy: [['$createdAt', 'desc']],
+      where: [['userId', '==', userId]],
+    }
+
+    let likesByUserId = await dispatch('queryDocuments', {
+      dappName: 'jembe',
+      typeLocator: 'likes',
+      queryOpts,
+    })
+
+    likesByUserId = likesByUserId.map((x) => x.toJSON())
+
+    console.log('likesByUserId :>> ', likesByUserId)
+
+    const seenJamIds = []
+    const trueLikes = []
+
+    for (let i = 0; i < likesByUserId.length; i++) {
+      if (!seenJamIds.includes(likesByUserId[i].jamId)) {
+        if (likesByUserId[i].isLiked === true) {
+          trueLikes.push(likesByUserId[i])
+        }
+        seenJamIds.push(likesByUserId[i].jamId)
+      }
+    }
+    console.log('truelikes :>> ', trueLikes)
+
+    const promisedLikes = trueLikes.map((like) =>
+      dispatch('fetchJamById', like.jamId)
+    )
+    const likedJamsByUser = await Promise.all(promisedLikes)
+
+    console.log('likedJamsByUser :>> ', likedJamsByUser)
+    commit('setLikedJamsByUsername', { jams: likedJamsByUser, userName })
   },
   async fetchNotifications({ commit, dispatch, state, getters }) {
     const fetchIt = async function ({ docType, where }) {
@@ -968,7 +1031,23 @@ export const actions = {
     console.log('dpnsUser :>> ', dpnsUser)
     return dpnsUser
   },
+  // query follows docType to get all the jammerId's this person is following
 
+  async resolveUserId({ dispatch }, userId) {
+    const queryOpts = {
+      limit: 1,
+      startAt: 1,
+      where: [['$id', '==', userId]],
+    }
+
+    const [dpnsDoc] = await dispatch('queryDocuments', {
+      dappName: 'dpns',
+      typeLocator: 'domain',
+      queryOpts,
+    })
+
+    return dpnsDoc ? dpnsDoc.toJSON() : null
+  },
   // TODO handle multi chunk data
   async fetchFromDatastore({ dispatch }, blobHash) {
     const queryOpts = {
@@ -1067,8 +1146,8 @@ export const actions = {
       queryOpts,
     })
 
-    // No profile found, nothing to do
-    if (!doc) return
+    // No profile found, nothing to do. return '' to avoid undefined errors
+    if (!doc) return ''
 
     const profile = doc.toJSON()
     profile.avatarRaw = profile.avatar
@@ -1101,6 +1180,7 @@ export const actions = {
         commit('setProfile', { ...profile })
       })
     }
+    return profile
   },
   resolveAssetURI({ dispatch }, URI) {
     // TODO use regexp to match and return http(s) / datastore / ipfs etc...
@@ -1214,25 +1294,28 @@ export const actions = {
     }
   },
   // eslint-disable-next-line no-unused-vars
-  setILikedIfRecent({ commit, state, view }, { like }) {
-    const { jamId, $createdAt } = like
-    const idx = state.jams[view].findIndex((jam) => {
-      return jam.$id === jamId
-    })
+  // setILikedIfRecent({ commit, state, view }, { like }) {
+  //   const { jamId, $createdAt } = like
+  //   const idx = state.jams[view].findIndex((jam) => {
+  //     return jam.$id === jamId
+  //   })
 
-    console.log('state.jams :>> ', state.jams[view])
-    console.log('idx :>> ', idx)
-    console.log('state.jams[idx] :>> ', state.jams[view][idx])
-    const iLikedBefore = state.jams[view][idx].iLiked
-    if ($createdAt > iLikedBefore.$createdAt) {
-      commit('setILiked', { like })
-    }
-  },
+  //   console.log('state.jams :>> ', state.jams[view])
+  //   console.log('idx :>> ', idx)
+  //   console.log('state.jams[idx] :>> ', state.jams[view][idx])
+  //   const iLikedBefore = state.jams[view][idx].iLiked
+  //   if ($createdAt > iLikedBefore.$createdAt) {
+  //     commit('setILiked', { like })
+  //   }
+  // },
   async sendJam(
     { dispatch, state },
     { jamText, replyToJamId = '', reJamId = '', opUserId = '', opUserName = '' }
   ) {
     const identity = await client.platform.identities.get(state.identityId)
+
+    const tags = linkify.find(jamText, 'hashtag')
+    console.log('tags', tags)
 
     const mentions = linkify.find(jamText, 'mention')
     console.log('mentions :>> ', mentions)
@@ -1261,6 +1344,7 @@ export const actions = {
       opUserId,
       opUserName,
       mentionedUserIds: mentionedUserIdsExist,
+      // tag: tags.data, // double check
     }
     console.log('jamDocProperties :>> ', jamDocProperties)
     const jamDoc = await client.platform.documents.create(
@@ -1272,6 +1356,28 @@ export const actions = {
     console.log('jamDoc :>> ', jamDoc.toJSON())
     console.log('jamDoc :>> ', jamDoc.id)
     console.log('jamDoc :>> ', jamDoc.id.toString())
+
+    const tagsDocProperties = []
+
+    tags.forEach((value, index, array) => {
+      const tDocProperties = {
+        tag: tags.data[index],
+        opUserId: state.name.userId,
+        opUserName: state.name.label,
+        jamId: jamDoc.id.toString(),
+        index,
+      }
+
+      const tDocPromise = client.platform.documents.create(
+        'jembe.tags',
+        identity,
+        tDocProperties
+      )
+
+      tagsDocProperties.push(tDocPromise)
+    })
+
+    const tagsDocs = await Promise.all(tagsDocProperties)
 
     const mentionsDocProperties = []
 
@@ -1303,7 +1409,7 @@ export const actions = {
 
     console.log('mentionsDocs :>> ', mentionsDocs)
 
-    const documents = [].concat(jamDoc, ...mentionsDocs)
+    const documents = [].concat(jamDoc, ...mentionsDocs, ...tagsDocs)
     const documentBatch = {
       // TODO phaseb add delegatedSignatures document and broadcast as batch
       create: documents,
@@ -1374,7 +1480,7 @@ export const actions = {
   },
   async followJammer(
     { dispatch, state, commit },
-    { jammerId, userName, isFollowing = true }
+    { jammerId, userName, isFollowing = true } // FIXME jammerId should go with jammerName, not userName
   ) {
     const follow = {
       jammerId,
@@ -1559,10 +1665,12 @@ export const actions = {
   async fetchJamById({ state, dispatch, commit }, jamId) {
     if (state.jamsById[jamId]) return state.jamsById[jamId]
 
+    console.log('jamId :>> ', jamId)
+    const stringJamId = jamId.toString()
     const queryOpts = {
       limit: 1,
       startAt: 1,
-      where: [['$id', '==', jamId]],
+      where: [['$id', '==', stringJamId]],
     }
     const result = await dispatch('queryDocuments', {
       dappName: 'jembe',
@@ -1574,7 +1682,7 @@ export const actions = {
     commit('setJamById', jam[0])
     return jam[0]
   },
-  // TODO only fetch Jams newer as most recent jam
+  // TODO only fetch Jams newer than most recent jam
   async fetchJams( // fetchJamsByView
     { dispatch, commit },
     { view, orderBy = undefined, where = undefined }
@@ -1864,6 +1972,7 @@ export const actions = {
     if (result.length === queryOpts.limit) {
       dispatch('fetchFollows', { followType, userName, userId })
     }
+    return follows
   },
   // eslint-disable-next-line no-unused-vars
   async countLikes({ dispatch, commit, state }, { jamId }) {
@@ -2422,8 +2531,12 @@ export const actions = {
         //   `https://us-central1-evodrip.cloudfunctions.net/evofaucet/drip/${address}`
         // ),
         this.$axios.get(`http://134.122.104.155:5050/drip/${address}`),
-        this.$axios.get(`http://127.0.0.1:5050/drip/${address}`),
       ]
+      if (process.env.DAPIADDRESSES && process.env.DAPIADDRESSES[0]) {
+        const ip = process.env.DAPIADDRESSES[0].split(':')[0]
+        reqs.push(this.$axios.get(`http://${ip}:5050/drip/${address}`))
+      }
+
       await Promise.race(reqs)
       console.log('... faucet dropped.')
       console.log(reqs)

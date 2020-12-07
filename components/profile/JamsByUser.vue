@@ -13,7 +13,6 @@ import Tweet from '~/components/tweet'
 
 export default {
   components: { Tweet },
-  props: { showReplies: { type: Boolean, default: false } },
   data() {
     return { userName: '', isLoadingJams: true }
   },

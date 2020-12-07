@@ -18,7 +18,7 @@
     >
       <v-row
         no-gutters
-        justify="start"
+        justify="center"
         style="height: 100%; width: 100%; overflow-y: hidden"
       >
         <v-col cols="10" style="max-width: 600px" class="pa-0 borders">

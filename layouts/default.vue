@@ -388,6 +388,9 @@ export default {
 .halfscreen {
   max-width: 600px;
 }
+.mobile {
+  width: 100vw;
+}
 </style>
 
 <style scoped>

@@ -13,10 +13,12 @@
         style="max-width: 50px; max-height=88px; margin-top: -2px;"
         class="mr-2"
         justify="end"
-        ><v-btn icon style="float: right">
-          <v-icon size="28" color="green">mdi-twitter-retweet</v-icon>
-        </v-btn></v-col
       >
+        <nuxt-link :to="'/' + like.userName">
+          <v-avatar color="lightgray" size="30">
+            <v-img class="elevation-6" :src="profile.avatar"></v-img> </v-avatar
+        ></nuxt-link>
+      </v-col>
       <v-col>
         <!-- {{ $route.params.username }} -->
         <!-- need name and avatar correlated to jam that was liked - from dash platform -->

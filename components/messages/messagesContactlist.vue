@@ -5,10 +5,9 @@
     :class="{
       fullscreen: $vuetify.breakpoint.mdAndUp,
       halfscreen: $vuetify.breakpoint.smAndDown,
+      mobile: $vuetify.breakpoint.xs,
     }"
   >
-    <!-- insert avatar and navbar -->
-    <!-- consider making own component -->
     <!-- <v-row
           v-if="$vuetify.breakpoint.xs"
           class="pl-2 pb-1"
@@ -18,30 +17,17 @@
     <v-row
       align="center"
       no-gutters
-      class="headerbar py-2"
-      style="height: 52px"
+      class="py-2"
+      style="height: 52px; width: 100%"
     >
-      <v-btn icon color="#008de4" @click="$router.go(-1)"
+      <v-btn icon color="#008de4" @click="$router.push({ name: 'discover' })"
         ><v-icon>mdi-arrow-left</v-icon></v-btn
       >
       <span class="font-header pl-2"> Messages </span>
     </v-row>
     <v-divider />
-    <v-row no-gutters justify="center" align="middle" class="pt-0 pl-2 pb-0">
-      <!-- <v-text-field
-        width="600px"
-        flat
-        rounded
-        filled
-        color="#008de4"
-        dense
-        prepend-inner-icon="mdi-magnify"
-        class="pt-4 pr-4 pl-4 pb-0"
-      >
-      </v-text-field> -->
+    <v-row no-gutters justify="center" align="center" class="pt-0 pl-2 pb-0">
       <messagesContactlistSearch />
-      <!-- <searchBarMessages /> -->
-      <!-- :search-bar-width="$vuetify.breakpoint.mdAndUp ? '600px' : '600px'" -->
     </v-row>
     <v-divider />
 
@@ -59,11 +45,7 @@
         tile
         nuxt
       >
-        <!-- use nuxt & :to="method" >> write a method that retrieves the messagesChat for that contactid -->
         <v-list-item two-line>
-          <!-- <v-for to loop through each of the chats> -->
-          <!-- each card will link to its corresponding chat based on the _username: route.params.username -->
-          <!-- <v-row justify="start" no-gutters="" style="max-height: 50px"> -->
           <nuxt-link :to="'/' + chatPartnerName(entry[1])">
             <v-list-item-avatar
               style="margin-top: 13px"
@@ -84,19 +66,16 @@
                 {{ chatPartnerName(entry[1]) }}
               </span>
               @{{ chatPartnerName(entry[1]) }}
-              <!-- {{ $route.params.username }} -->
               <span class="time-posted" style="float: right">
-                <!-- {{ posted(1579500000000) }} -->
                 {{ getUserSignupTime(chatPartnerName(entry[1])) }}
               </span>
             </v-list-item-title>
             <v-list-item-subtitle>
               Write me something, I'm happy to chat.
-              <!-- last message text truncate at width = . also consider reactions
-            "User reacted with ;~)" -->
+              <!-- last message text truncate at width = y 
+              also consider reactions: "User reacted with ;~)" -->
             </v-list-item-subtitle>
           </v-list-item-content>
-          <!-- </v-row> -->
         </v-list-item>
       </v-card>
     </div>
@@ -107,9 +86,6 @@
 // eslint-disable-next-line no-unused-vars
 import { mapActions, mapGetters } from 'vuex'
 import messagesContactlistSearch from '~/components//messages/messagesContactlistSearch'
-// import messagesChat from '~/components//messages/messagesChat'
-// import searchBarMessages from '~/components/searchBarMessages'
-// import ComposeJam from '~/components/ComposeJam'
 // const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default {

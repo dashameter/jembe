@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer v-model="togglemenu" absolute temporary>
+  <v-navigation-drawer :value="togglemenu" absolute temporary>
     <v-row justify="center" no-gutters>
       <v-list nav class="pr-0" justify="center" rounded>
         <nuxt-link :to="'/discover'">
@@ -72,12 +72,7 @@ import ComposeJamDialog from '~/components/ComposeJamDialog'
 export default {
   components: { ComposeJamDialog },
   props: {
-    togglemenu: {
-      type: String,
-      default() {
-        return {}
-      },
-    },
+    togglemenu: Boolean,
   },
   data() {
     return {

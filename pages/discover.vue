@@ -6,10 +6,10 @@
       halfscreen: $vuetify.breakpoint.smAndDown,
     }"
   >
-    <v-row no-gutters>
+    <v-row no-gutters justify="center">
       <!-- middle column: compose jam and jam cards -->
       <v-col class="flex-nowrap py-0 pr-0" style="max-width: 600px">
-        <v-container class="pa-0 borders pt-0">
+        <v-container class="pa-0 borders pt-0" style="height: 100vh">
           <v-row>
             <v-col class="py-2">
               <v-row
@@ -26,24 +26,38 @@
                 align="center"
                 no-gutters
               >
-                <v-list-item-avatar class="pa-4">
-                  <v-avatar
-                    size="40"
-                    color="lightgray"
-                    @click.stop="togglemenu = !togglemenu"
+                <v-list-item-avatar class="pl-0 ml-0">
+                  <v-badge
+                    dot
+                    offset-x="14"
+                    offset-y="13"
+                    :content="badgeCount('notifications')"
+                    :value="badgeCount('notifications')"
+                    color="red"
+                    overlap
                   >
-                    <v-img
-                      class="elevation-6"
-                      :src="getProfile($store.state.name.label).avatar"
-                    ></v-img>
-                  </v-avatar>
+                    <v-avatar
+                      size="40"
+                      color="lightgray"
+                      @click.stop="togglemenu = !togglemenu"
+                    >
+                      <v-img
+                        class="elevation-6"
+                        :src="getProfile($store.state.name.label).avatar"
+                      ></v-img>
+                    </v-avatar>
+                  </v-badge>
                 </v-list-item-avatar>
-                <span class="font-header pt-1 pb-1 pl-4"> Home </span>
+                <span class="font-header pt-1 pb-1"> Home </span>
               </v-row>
               <v-divider />
             </v-col>
           </v-row>
-          <navbarMobile v-if="togglemenu" @close="!togglemenu" />
+          <navbarMobile
+            v-if="togglemenu"
+            :togglemenu="togglemenu"
+            @close="togglemenu = false"
+          />
 
           <ComposeJam v-if="$vuetify.breakpoint.smAndUp" />
           <!-- <Jam v-for="(jam, i) in getJams('/discover')" :key="i" :jam="jam" /> -->
@@ -77,6 +91,21 @@
       >
         <searchBar />
       </v-col>
+      <v-expansion-panels
+        v-if="$vuetify.breakpoint.mdAndUp"
+        class="messagesOverlay"
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-header class="font-header">
+            Messages
+          </v-expansion-panel-header>
+          <v-divider />
+          <v-expansion-panel-content>
+            <!-- {{ getLastPartnerMessage }} -->
+            <messagesContactlistSearch />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </v-row>
   </v-col>
 </template>
@@ -91,6 +120,7 @@ import ComposeJamDialog from '~/components/ComposeJamDialog'
 import OnboardDialog from '~/components/profile/onboarding/OnboardDialog'
 import searchBar from '~/components/searchBar'
 import navbarMobile from '~/components/menu/navbarMobile'
+import messagesContactlistSearch from '~/components/messages/messagesContactlistSearch'
 
 export default {
   components: {
@@ -100,11 +130,12 @@ export default {
     ComposeJam,
     ComposeJamDialog,
     OnboardDialog,
+    messagesContactlistSearch,
   },
   data() {
     return {
       showComposeJamDialog: false,
-      togglemenu: null,
+      togglemenu: false,
       showOnboardDialog: false,
       items: [
         {
@@ -136,7 +167,13 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getJams', 'getProfile']),
+    ...mapGetters([
+      'getJams',
+      'getProfile',
+      'getMyContactList',
+      'getLastPartnerMessage',
+      'badgeCount',
+    ]),
   },
   async created() {
     this.showOnboardDialog =
@@ -173,8 +210,26 @@ export default {
   font-family: 'Montserrat';
   font-size: 16px;
 }
-/* .topbar {
-  position: sticky;
-  top: 0;
-} */
+.messagesOverlay {
+  width: 400px;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  max-height: 530px;
+  z-index: 1;
+  min-width: 350px;
+  max-width: 400px;
+  margin-right: 20px;
+  border-top-right-radius: 16px;
+  border-top-left-radius: 16px;
+  align-self: flex-end;
+  box-sizing: border-box;
+  /* flex-basis: auto; */
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-height: 0px;
+  box-shadow: rgba(101, 119, 134, 0.2) 0px 0px 15px,
+    rgba(101, 119, 134, 0.15) 0px 0px 3px 1px;
+}
 </style>

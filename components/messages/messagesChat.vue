@@ -1,13 +1,13 @@
 <template>
-  <div style="height: 100vh" class="d-flex flex-column flex-grow-1">
-    <!-- insert avatar and navbar -->
-    <!-- consider making own component -->
-    <!-- <v-row
-          v-if="$vuetify.breakpoint.xs"
-          class="pl-2 pb-1"
-          align="center"
-          no-gutters
-        > -->
+  <div
+    style="height: 100vh"
+    class="d-flex flex-column flex-grow-1"
+    :class="{
+      fullscreen: $vuetify.breakpoint.mdAndUp,
+      halfscreen: $vuetify.breakpoint.smAndDown,
+      mobile: $vuetify.breakpoint.xs,
+    }"
+  >
     <v-row
       align="center"
       no-gutters
@@ -84,6 +84,7 @@
               v-linkified:options="{ className: 'linkify' }"
               v-html="message.encMessage"
             />
+            <!-- <div>{{ getLastPartnerMessage(chatPartnerUserId) }}</div> -->
           </v-card>
         </v-row>
       </div>
@@ -133,6 +134,12 @@ export default {
   },
   computed: {
     ...mapGetters(['getJams', 'getProfile', 'getDirectMessages']),
+    // ...mapGetters([
+    //   'getJams',
+    //   'getProfile',
+    //   'getDirectMessages',
+    //   'getLastPartnerMessage',
+    // ]),
   },
   async created() {
     this.chatPartnerUserName = this.$route.params.userName
@@ -141,8 +148,11 @@ export default {
       this.chatPartnerUserId = (
         await this.resolveUsername(this.chatPartnerUserName)
       ).$id
-
       this.fetchDirectMessagesLoop()
+      console.log(
+        'directmessages',
+        this.getDirectMessages(this.chatPartnerUserId)
+      )
     }
   },
   methods: {
@@ -151,6 +161,16 @@ export default {
       'resolveUsername',
       'sendDirectMessage',
     ]),
+    // lastmessage(chatPartnerUserId) {
+    //   const chatPartnerMessages = this.getDirectMessages(
+    //     chatPartnerUserId
+    //   ).filter((message) => message.senderUserId === chatPartnerUserId)
+    //   console.log(
+    //     'last messsage',
+    //     chatPartnerMessages[chatPartnerMessages.length - 1]
+    //   )
+    //   return chatPartnerMessages[chatPartnerMessages.length - 1]
+    // },
     enterPress(event) {
       // TODO use text-area and add linebreaks to messages
       if (event.shiftKey === true) {
@@ -205,14 +225,14 @@ a.linkify :hover {
   text-decoration: underline !important;
 }
 
-.headerbar {
-  /* position: sticky; */
-  /* top: 0; */
+/* .headerbar {
+  position: sticky;
+  top: 0;
   height: 54px;
   background-color: white;
   border-bottom: solid 1px;
   border-bottom-color: lightgray;
-}
+} */
 .messageinput {
   border-top: solid 1px;
   border-top-color: lightgray;
