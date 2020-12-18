@@ -2,6 +2,14 @@
   <div>
     <v-autocomplete
       :value="name"
+      :loading="loading"
+      :items="items"
+      :search-input.sync="search"
+      :disabled="this.$store.state.isSyncing"
+      :rules="nameRules"
+      :error-messages="nameErrors"
+      :success-messages="nameSuccess"
+      :messages="nameMessages"
       auto-select-first
       class="mx-auto"
       style="
@@ -12,15 +20,7 @@
       "
       outlined
       label="Enter Username"
-      :loading="loading"
-      :items="items"
-      :search-input.sync="search"
       hide-no-data
-      :disabled="this.$store.state.isSyncing"
-      :rules="nameRules"
-      :error-messages="nameErrors"
-      :success-messages="nameSuccess"
-      :messages="nameMessages"
       @input="validateName($event)"
     ></v-autocomplete>
     <v-text-field

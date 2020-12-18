@@ -7,6 +7,7 @@ const glob = require('glob')
 const envRun = process.env.NUXT_ENV_RUN
 
 let clientOpts = {
+  passFakeAssetLockProofForTests: process.env.NUXT_LOCALNODE,
   wallet: {
     // privateKey: 'currently throws a signing error'
     mnemonic: process.env.NUXT_MNEMONIC,
@@ -127,24 +128,22 @@ const registerContract = async (contractDocuments) => {
             newId
           )
 
-          if (contractName === 'PRIMITIVES_CONTRACT') {
+          if (contractName === 'JEMBE_CONTRACT') {
             try {
               fs.appendFileSync(
-                `/home/${process.env.USER}/.bashrc`,
+                `/home/${process.env.USER}/.evoenv`,
                 `\nexport NUXT_${contractName}_ID_${envRun}=${newId}\n`
               )
 
               console.log(
                 '-> Appended',
                 `${contractName}_${envRun}`,
-                'to ~/.bashrc'
+                'to ~/.evoenv'
               )
             } catch (e) {
               console.log(e)
               console.log(
-                'Add the',
-                contractName,
-                'to your environment variables manually to share it with other dApps..'
+                `Add the ${contractName} to your environment variables manually to share it with other dApps..`
               )
             }
           }
@@ -180,7 +179,7 @@ const registerContract = async (contractDocuments) => {
 
     fs.writeFileSync(`./env/datacontracts_${envRun}.env`, envVarString)
   } catch (e) {
-    console.log(e)
+    console.dir(e)
   } finally {
     if (client) client.disconnect()
   }

@@ -467,6 +467,20 @@ export const mutations = {
 }
 
 export const actions = {
+  searchTags({ dispatch }, searchVal) {
+    const queryOpts = {
+      limit: 100,
+      startAt: 1,
+      orderBy: [['$createdAt', 'desc']],
+      where: [['tag', 'startsWith', searchVal.toLowerCase()]],
+    }
+    console.log('searchTags queryOpts :>> ', queryOpts)
+    return dispatch('queryDocuments', {
+      dappName: 'jembe',
+      typeLocator: 'tags',
+      queryOpts,
+    })
+  },
   async fetchValidSessionIdentity({ dispatch, commit, getters }, doc) {
     let validSessionIdentity = getters.getValidSessionIdentity(doc)
 
@@ -1247,6 +1261,26 @@ export const actions = {
         userName,
         userId,
       })
+    }
+  },
+  async searchJembeNames({ dispatch }, searchString) {
+    const queryOpts = {
+      where: [['normalizedLabel', 'startsWith', searchString.toLowerCase()]],
+      startAt: 1,
+      limit: 4,
+      orderBy: [['normalizedLabel', 'asc']],
+    }
+    try {
+      const searchNames = await client.platform.documents.get(
+        'primitives.Signup',
+        queryOpts
+      )
+      console.log({ searchNames })
+      // commit('setSearchNames', searchNames)
+      return searchNames
+    } catch (e) {
+      dispatch('showSnackbar', { text: e.message })
+      console.error('Something went wrong:', e)
     }
   },
   async searchDashNames({ dispatch }, searchString) {
@@ -2405,6 +2439,7 @@ export const actions = {
     console.log('Initializing Dash.Client with mnemonic: ')
     console.log('Encrypted mnemonic:', state.mnemonic)
     let clientOpts = {
+      passFakeAssetLockProofForTests: process.env.LOCALNODE,
       dapiAddresses: process.env.DAPIADDRESSES,
       // dapiAddresses: [
       //   '54.212.206.131:3000',
@@ -2483,7 +2518,11 @@ export const actions = {
     // Remove undefined keys
     clientOpts = JSON.parse(JSON.stringify(clientOpts))
 
+    console.log('clientOpts :>> ', clientOpts)
+
     client = new Dash.Client(clientOpts)
+
+    console.log('clientOpts after init :>> ', clientOpts)
 
     Object.entries(client.getApps().apps).forEach(([name, entry]) =>
       console.log(name, entry.contractId.toString())

@@ -1,7 +1,7 @@
 export default {
   server: {
     // Enable to access on mobile via local network
-    // host: '0.0.0.0',
+    host: '0.0.0.0',
   },
   env: {
     NAME_LABEL: process.env.NUXT_JEMBE_NAME_LABEL || '',
@@ -29,6 +29,7 @@ export default {
     DPNS: process.env.NUXT_DPNS_CONTRACT_ID
       ? { contractId: process.env.NUXT_DPNS_CONTRACT_ID }
       : undefined,
+    LOCALNODE: !!process.env.NUXT_LOCALNODE,
   },
   mode: 'spa',
   router: {

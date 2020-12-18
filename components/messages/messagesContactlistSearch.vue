@@ -83,7 +83,7 @@ export default Vue.extend({
   methods: {
     ...mapMutations([]),
     ...mapActions([
-      'searchDashNames',
+      'searchJembeNames',
       // 'dashNameExists',
       // 'isSignedUp',
     ]),
@@ -97,13 +97,16 @@ export default Vue.extend({
 
       this.loading = true
 
-      const dashNames = await this.searchDashNames(typedName)
+      const dashNames = await this.searchJembeNames(typedName)
 
       // If a larger nonce was set since the async search call, this request is stale -> end function execution
       if (nonce < this.searchDebounceNonce) return
 
       this.items = dashNames.map((name) => {
-        return { text: name.data.label, value: `${name.data.label}:${name.id}` }
+        return {
+          text: name.data.label,
+          value: `${name.data.label}:${name.id}`,
+        }
       })
 
       this.loading = false
