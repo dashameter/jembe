@@ -14,9 +14,12 @@
         class="mr-2"
         justify="end"
       >
-        <nuxt-link :to="'/' + like.userName">
+        <nuxt-link :to="'/' + jam.userName">
           <v-avatar color="lightgray" size="30">
-            <v-img class="elevation-6" :src="profile.avatar"></v-img> </v-avatar
+            <v-img
+              class="elevation-6"
+              :src="getProfile(jam.userName).avatar"
+            ></v-img> </v-avatar
         ></nuxt-link>
       </v-col>
       <v-col>
@@ -34,7 +37,9 @@
           <span style="font-weight: bold">{{ jam.userName }} </span>rejammed
           your Jam
         </div>
-        <span v-html="linkifyMe(opText)" />
+        <!-- <span v-linkify="linkifyMe(opText)" /> -->
+        <div v-linkify="opText" />
+
         <v-skeleton-loader
           v-if="opText === ''"
           type="list-item-two-line"

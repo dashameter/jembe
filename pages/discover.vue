@@ -91,21 +91,7 @@
       >
         <searchBar />
       </v-col>
-      <v-expansion-panels
-        v-if="$vuetify.breakpoint.mdAndUp"
-        class="messagesOverlay"
-      >
-        <v-expansion-panel>
-          <v-expansion-panel-header class="font-header">
-            Messages
-          </v-expansion-panel-header>
-          <v-divider />
-          <v-expansion-panel-content>
-            <!-- {{ getLastPartnerMessage }} -->
-            <messagesContactlistSearch />
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
+      <messagesOverlay />
     </v-row>
   </v-col>
 </template>
@@ -120,7 +106,7 @@ import ComposeJamDialog from '~/components/ComposeJamDialog'
 import OnboardDialog from '~/components/profile/onboarding/OnboardDialog'
 import searchBar from '~/components/searchBar'
 import navbarMobile from '~/components/menu/navbarMobile'
-import messagesContactlistSearch from '~/components/messages/messagesContactlistSearch'
+import messagesOverlay from '~/components/messages/messagesOverlay'
 
 export default {
   components: {
@@ -130,7 +116,7 @@ export default {
     ComposeJam,
     ComposeJamDialog,
     OnboardDialog,
-    messagesContactlistSearch,
+    messagesOverlay,
   },
   data() {
     return {
@@ -209,27 +195,5 @@ export default {
   color: rgba(20, 23, 26, 0.8) !important;
   font-family: 'Montserrat';
   font-size: 16px;
-}
-.messagesOverlay {
-  width: 400px;
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  max-height: 530px;
-  z-index: 1;
-  min-width: 350px;
-  max-width: 400px;
-  margin-right: 20px;
-  border-top-right-radius: 16px;
-  border-top-left-radius: 16px;
-  align-self: flex-end;
-  box-sizing: border-box;
-  /* flex-basis: auto; */
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  min-height: 0px;
-  box-shadow: rgba(101, 119, 134, 0.2) 0px 0px 15px,
-    rgba(101, 119, 134, 0.15) 0px 0px 3px 1px;
 }
 </style>

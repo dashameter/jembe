@@ -32,6 +32,9 @@ import { mapActions, mapMutations } from 'vuex'
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default Vue.extend({
+  props: {
+    chatPartnerUserName: { type: String, default: '' },
+  },
   data() {
     return {
       loading: false,
@@ -111,8 +114,8 @@ export default Vue.extend({
       const userName = event.split(':')[0]
       this.items = [{ text: userName, value: event }]
 
-      // console.log('event :>> ', event)
-      // console.log('event.split(:)[0]) :>> ', event.split(':')[0])
+      console.log('event :>> ', event)
+      console.log('event.split(:)[0]) :>> ', event.split(':')[0])
 
       this.name = event
       this.nameErrors = []
@@ -121,7 +124,11 @@ export default Vue.extend({
 
       console.log('messageName -> userName :>> ', userName)
 
-      this.$router.push(`/messages/${userName}`)
+      if (this.$route.name === 'messages-userName') {
+        this.$router.push('/messages/' + userName)
+      } else {
+        this.$emit('chatpartnerselected', userName)
+      }
     },
   },
 })

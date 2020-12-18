@@ -155,12 +155,13 @@ export const getters = {
       return null
     }
   },
-  // getLastPartnerMessage: (state) => (chatPartnerUserId) => {
-  //   const chatPartnerMessages = this.getDirectMessages(
-  //     chatPartnerUserId
-  //   ).filter((message) => message.senderUserId === chatPartnerUserId)
-  //   return chatPartnerMessages[chatPartnerMessages.length - 1]
-  // },
+  getLastPartnerMessage: (state, getters) => (chatPartnerUserId) => {
+    const chatPartnerMessages = getters
+      .getDirectMessages(chatPartnerUserId)
+      .filter((message) => message.senderUserId === chatPartnerUserId)
+    const lastDoc = chatPartnerMessages[chatPartnerMessages.length - 1]
+    return lastDoc ? lastDoc.encMessage : ''
+  },
   badgeCount: (state) => (eventType) =>
     state.notifications.filter((n) => n.$createdAt > state.lastSeen[eventType])
       .length,
@@ -184,7 +185,7 @@ export const getters = {
     }
   },
   getMyContactList(state) {
-    console.log(Object.entries(state.contactList))
+    console.log('contactlist', Object.entries(state.contactList))
     return Object.entries(state.contactList)
   },
   getDirectMessages: (state) => (chatPartnerUserId) => {
@@ -1293,28 +1294,16 @@ export const actions = {
         break
     }
   },
-  // eslint-disable-next-line no-unused-vars
-  // setILikedIfRecent({ commit, state, view }, { like }) {
-  //   const { jamId, $createdAt } = like
-  //   const idx = state.jams[view].findIndex((jam) => {
-  //     return jam.$id === jamId
-  //   })
-
-  //   console.log('state.jams :>> ', state.jams[view])
-  //   console.log('idx :>> ', idx)
-  //   console.log('state.jams[idx] :>> ', state.jams[view][idx])
-  //   const iLikedBefore = state.jams[view][idx].iLiked
-  //   if ($createdAt > iLikedBefore.$createdAt) {
-  //     commit('setILiked', { like })
-  //   }
-  // },
   async sendJam(
     { dispatch, state },
     { jamText, replyToJamId = '', reJamId = '', opUserId = '', opUserName = '' }
   ) {
     const identity = await client.platform.identities.get(state.identityId)
 
-    const tags = linkify.find(jamText, 'hashtag')
+    const tags = linkify
+      .find(jamText, 'hashtag')
+      .map((x) => x.value.substring(1))
+
     console.log('tags', tags)
 
     const mentions = linkify.find(jamText, 'mention')
@@ -1344,40 +1333,48 @@ export const actions = {
       opUserId,
       opUserName,
       mentionedUserIds: mentionedUserIdsExist,
-      // tag: tags.data, // double check
+      tags,
     }
+
     console.log('jamDocProperties :>> ', jamDocProperties)
+
     const jamDoc = await client.platform.documents.create(
       'jembe.jams',
       identity,
       jamDocProperties
     )
-    console.log('jamDoc :>> ', jamDoc)
-    console.log('jamDoc :>> ', jamDoc.toJSON())
-    console.log('jamDoc :>> ', jamDoc.id)
-    console.log('jamDoc :>> ', jamDoc.id.toString())
+
+    // Convert tags array to individual documents for the jeme.tags doctype,
+    // this serves as an index for querying jams filtered by tags
 
     const tagsDocProperties = []
 
     tags.forEach((value, index, array) => {
-      const tDocProperties = {
-        tag: tags.data[index],
+      console.log('tag value :>> ', value)
+      if (value == null) return
+
+      const tagDocProperties = {
+        tag: value,
         opUserId: state.name.userId,
-        opUserName: state.name.label,
         jamId: jamDoc.id.toString(),
         index,
       }
 
+      console.log('tagsDocProperties :>> ', tagsDocProperties)
+
       const tDocPromise = client.platform.documents.create(
         'jembe.tags',
         identity,
-        tDocProperties
+        tagDocProperties
       )
 
       tagsDocProperties.push(tDocPromise)
     })
 
     const tagsDocs = await Promise.all(tagsDocProperties)
+
+    // Convert mentionedUserIds array to individual documents for the jeme.mentions doctype,
+    // this serves as an index for querying jams filtered by mentions
 
     const mentionsDocProperties = []
 
@@ -1409,9 +1406,10 @@ export const actions = {
 
     console.log('mentionsDocs :>> ', mentionsDocs)
 
+    // Submit Jam and additional mentions and tags docs (as indices) in a batch transition
     const documents = [].concat(jamDoc, ...mentionsDocs, ...tagsDocs)
+
     const documentBatch = {
-      // TODO phaseb add delegatedSignatures document and broadcast as batch
       create: documents,
       replace: [],
       delete: [],
@@ -1638,6 +1636,26 @@ export const actions = {
   //   const jams = state.jams.filter((jam) => jam.$id === jamId)
   //   commit('setJams', jams)
   // },
+  async fetchJamIdsByTag({ dispatch }, { tag }) {
+    // Resolve userName to DPNS id
+    console.log('fetchJamIdsByTag', { tag })
+
+    const queryOpts = {
+      limit: 10,
+      startAt: 1,
+      where: [
+        // ['reJamId', '==', ''],
+        ['tag', '==', tag],
+      ],
+    }
+    const result = await dispatch('queryDocuments', {
+      dappName: 'jembe',
+      typeLocator: 'tags',
+      queryOpts,
+    })
+    console.log('result :>> ', result)
+    return result.map((x) => x.data.jamId)
+  },
   async fetchJamsByUser({ dispatch }, { view, userName, showReplies = false }) {
     // Resolve userName to DPNS id
     console.log('fetchJamsByUser', { view, userName, showReplies })
@@ -1663,7 +1681,7 @@ export const actions = {
     })
   },
   async fetchJamById({ state, dispatch, commit }, jamId) {
-    if (state.jamsById[jamId]) return state.jamsById[jamId]
+    if (state.jamsById[jamId]) return { ...state.jamsById[jamId] }
 
     console.log('jamId :>> ', jamId)
     const stringJamId = jamId.toString()
@@ -1680,7 +1698,7 @@ export const actions = {
     const jam = result.map((jam) => jam.toJSON())
     console.log('jam 0', jam[0])
     commit('setJamById', jam[0])
-    return jam[0]
+    return { ...jam[0] }
   },
   // TODO only fetch Jams newer than most recent jam
   async fetchJams( // fetchJamsByView
@@ -1711,6 +1729,7 @@ export const actions = {
       if (jam.reJamId !== '') {
         const reJam = await dispatch('fetchJamById', jam.reJamId)
         reJam.reJamByUsername = jam.userName
+        reJam.$id = jam.$id
         return reJam
       } else {
         return jam
@@ -2550,13 +2569,13 @@ export const actions = {
     commit('setLoadingStep', 1)
     try {
       const identity = await client.platform.identities.register()
-      commit('setIdentity', identity.id)
-      commit('setLoadingStep', 2)
       console.log({ identity })
       console.log(
         'account.getIdentityIds(); :>> ',
         client.account.getIdentityIds()
       )
+      commit('setIdentity', identity.id)
+      commit('setLoadingStep', 2)
     } catch (e) {
       console.log('identity register error')
       console.log(e)

@@ -6,11 +6,6 @@
       halfscreen: $vuetify.breakpoint.smAndDown,
     }"
   >
-    <!-- <v-row> -->
-    <!-- middle column: compose jam and jam cards -->
-    <!-- <v-col class="flex-nowrap" style="max-width: 600px"> -->
-    <!-- <v-container class="pa-0 borders pt-0"> -->
-    <!-- {{ $route.params }} -->
     <v-container
       v-if="$vuetify.breakpoint.smAndDown"
       class="pa-0"
@@ -23,7 +18,10 @@
       >
         <v-col cols="10" style="max-width: 600px" class="pa-0 borders">
           <messagesContactlist v-if="!$route.params.userName" />
-          <messagesChat v-if="$route.params.userName" />
+          <messagesChat
+            v-if="$route.params.userName"
+            :chat-partner-user-name="$route.params.userName"
+          />
         </v-col>
       </v-row>
     </v-container>
@@ -37,13 +35,13 @@
           <messagesContactlist />
         </v-col>
         <v-col class="borders pa-0" style="width: 600px">
-          <messagesChat v-if="$route.params.userName" />
+          <messagesChat
+            v-if="$route.params.userName"
+            :chat-partner-user-name="$route.params.userName"
+          />
         </v-col>
       </v-row>
     </v-container>
-    <!-- </v-container> -->
-    <!-- </v-col> -->
-    <!-- </v-row> -->
   </v-col>
 </template>
 
@@ -51,14 +49,18 @@
 import { mapGetters } from 'vuex'
 import messagesContactlist from '~/components//messages/messagesContactlist'
 import messagesChat from '~/components//messages/messagesChat'
-// import messageLayout from '~/layouts/messageLayout'
 
 export default {
   components: { messagesContactlist, messagesChat },
-  // layout: 'messageLayout',
+  data() {
+    return {
+      chatPartnerUserName: null,
+    }
+  },
   computed: {
     ...mapGetters(['getProfile']),
   },
+  methods: {},
 }
 </script>
 

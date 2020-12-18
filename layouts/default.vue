@@ -391,6 +391,9 @@ export default {
 .mobile {
   width: 100vw;
 }
+.messagestab {
+  height: 100vh;
+}
 </style>
 
 <style scoped>

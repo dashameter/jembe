@@ -117,6 +117,17 @@
                 },
                 "maxItems": 5,
                 "minItems": 0
+            },
+            "tags": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                    "maxLength": 20,
+                    "minLength": 1 
+                },
+                "maxItems": 5,
+                "minItems": 0
             }
         },
         "additionalProperties": false
@@ -472,6 +483,74 @@
                 "type": "string",
                 "maxLength": 1024,
                 "minLength": 0
+            }
+        },
+        "additionalProperties": false
+    },
+    "tags": {
+        "indices": [
+            {
+                "unique": true,
+                "properties": [
+                    {
+                        "jamId": "asc"
+                    },
+                    {
+                        "index": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "tag": "asc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "$createdAt": "desc"
+                    }
+                ]
+            },
+            {
+                "properties": [
+                    {
+                        "opUserId": "asc"
+                    }
+                ]
+            }
+        ],
+        "required": [
+            "opUserId",
+            "jamId",
+            "index",
+            "$createdAt"
+        ],
+        "properties": {
+            "index": {
+                "type": "number",
+                "maximum": 4,
+                "minimum": 0
+            },
+            "jamId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "opUserId": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 44,
+                "minLength": 42
+            },
+            "tag": {
+                "type": "string",
+                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+                "maxLength": 20,
+                "minLength": 1 
             }
         },
         "additionalProperties": false

@@ -1,104 +1,91 @@
 <template>
-  <div
-    class="d-flex flex-column flex-grow-1"
-    :class="{
-      fullscreen: $vuetify.breakpoint.mdAndUp,
-      halfscreen: $vuetify.breakpoint.smAndDown,
-      mobile: $vuetify.breakpoint.xs,
-    }"
-  >
-    <v-row
-      v-if="$route.name === 'messages-userName'"
-      align="center"
-      no-gutters
-      class="py-2"
-      style="height: 52px; width: 100%"
+  <div>
+    <v-expansion-panels
+      v-if="$vuetify.breakpoint.mdAndUp"
+      class="overlay-style px-0"
     >
-      <v-btn icon color="#008de4" @click="$router.push({ name: 'discover' })"
-        ><v-icon>mdi-arrow-left</v-icon></v-btn
-      >
-      <span class="font-header pl-2"> Messages </span>
-    </v-row>
-    <v-divider />
-    <v-row
-      v-if="$route.name === 'messages-userName'"
-      no-gutters
-      justify="center"
-      align="center"
-      class="pt-0 pl-2 pb-0"
-    >
-      <messagesContactlistSearch />
-    </v-row>
-    <v-divider />
-
-    <div
-      id="scrollcontainer"
-      style="height: 100%; overflow-y: scroll; flex-shrink: 1"
-    >
-      <v-card
-        v-for="(entry, idx) in getMyContactList"
-        :key="idx"
-        :ripple="false"
-        class="my-0 mx-auto messagecard"
-        elevation="0"
-        tile
-        nuxt
-        @click="selectChatPartner(chatPartnerName(entry[1]))"
-      >
-        <v-list-item two-line>
-          <nuxt-link :to="'/' + chatPartnerName(entry[1])">
-            <v-list-item-avatar
-              style="margin-top: 13px"
-              color="lightgray"
-              size="48"
-            >
-              <v-img
-                class="elevation-6"
-                :src="getProfile(chatPartnerName(entry[1])).avatar"
-              ></v-img> </v-list-item-avatar
-          ></nuxt-link>
-          <v-list-item-content
-            class="d-inline-block text-nowrap"
-            style="max-width: 600px"
+      <v-expansion-panel class="px-0 mx-0">
+        <v-expansion-panel-header>
+          <span v-if="!chatPartnerUserName" class="font-header px-6 py-4">
+            Messages
+          </span>
+          <span v-if="chatPartnerUserName" class="font-header pa-0">
+            <v-list-item two-line>
+              <v-btn
+                icon
+                color="#008de4"
+                @click.stop="chatPartnerUserName = null"
+                ><v-icon>mdi-arrow-left</v-icon></v-btn
+              >
+              <v-list-item-content class="py-2 pl-3">
+                <v-list-item-title>
+                  <span style="font-weight: bold; font-size: 19px">
+                    {{ chatPartnerUserName }}
+                  </span>
+                </v-list-item-title>
+                <v-list-item-subtitle
+                  style="color: #757575; font-size: 12px; margin-left: 1px"
+                >
+                  {{ `@${chatPartnerUserName}` }}
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </span>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <messagesContactlistSearch
+            v-if="!chatPartnerUserName"
+            class="px-5"
+            @chatpartnerselected="setChatPartnerUsername"
+          />
+          <messagesChat
+            v-if="chatPartnerUserName"
+            :chat-partner-user-name="chatPartnerUserName"
+            class="px-0"
+            @back="chatPartnerUserName = null"
           >
-            <v-list-item-title>
-              <span style="font-weight: bold" class="truncate">
-                {{ chatPartnerName(entry[1]) }}
-              </span>
-              @{{ chatPartnerName(entry[1]) }}
-              <span class="time-posted" style="float: right">
-                {{ getUserSignupTime(chatPartnerName(entry[1])) }}
-              </span>
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ getLastPartnerMessage(chatPartnerUserId(entry[1])) }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
-      </v-card>
-    </div>
+            {{ chatPartnerUserName }}
+          </messagesChat>
+          <messagesContactlist
+            v-if="!chatPartnerUserName"
+            @chatpartnerselected="setChatPartnerUsername"
+          >
+            {{ chatPartnerUserName }}
+          </messagesContactlist>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
   </div>
 </template>
 
 <script>
+// eslint-disable-next-line no-unused-vars
 import { mapActions, mapGetters } from 'vuex'
+import messagesChat from '~/components//messages/messagesChat'
+import messagesContactlist from '~/components/messages/messagesContactlist'
 import messagesContactlistSearch from '~/components/messages/messagesContactlistSearch'
+// const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default {
-  components: { messagesContactlistSearch },
+  components: {
+    messagesContactlistSearch,
+    messagesContactlist,
+    messagesChat,
+  },
   data() {
-    return {}
+    return {
+      chatPartnerUserName: null,
+    }
+  },
+  MessagesContactlistdata() {
+    return {
+      chatPartnerUserName: null,
+    }
   },
   computed: {
-    ...mapGetters([
-      'getLastPartnerMessage',
-      'getProfile',
-      'getMyContactList',
-      'getUserSignupTime',
-    ]),
+    ...mapGetters(['getProfile', 'getMyContactList', 'getUserSignupTime']),
   },
   async created() {
-    console.log('route', this.$route)
     await this.fetchContactlist({ userId: this.$store.state.name.userId })
     this.getMyContactList.forEach((entry) => {
       const userName = this.chatPartnerName(entry[1])
@@ -109,12 +96,9 @@ export default {
   mounted() {},
   methods: {
     ...mapActions(['fetchContactlist', 'fetchUserInfo']),
-    selectChatPartner(name) {
-      if (this.$route.name === 'messages-userName') {
-        this.$router.push('/messages/' + name)
-      } else {
-        this.$emit('chatpartnerselected', name)
-      }
+    setChatPartnerUsername(userName) {
+      this.chatPartnerUserName = userName
+      console.log('partnername', this.chatPartnerUserName)
     },
     chatPartnerName(contact) {
       console.log('contact :>> ', contact)
@@ -124,15 +108,6 @@ export default {
       )
         return contact.receiverUserName
       else return contact.senderUserName
-    },
-    chatPartnerUserId(contact) {
-      console.log('contact :>> ', contact)
-      if (
-        contact.senderUserName.toLowerCase() ===
-        this.$store.state.name.label.toLowerCase()
-      )
-        return contact.receiverUserId
-      else return contact.senderUserId
     },
     posted(posttime) {
       const eventDate = new Date(posttime)
@@ -152,6 +127,8 @@ export default {
         'Dec',
       ]
 
+      // const sameMinutes = now.getMinutes() === eventDate.getMinutes()
+      // const sameHours = now.getHours() === eventDate.getHours()
       const sameDay = now.getDate() === eventDate.getDate()
       const sameMonth = now.getMonth() === eventDate.getMonth()
       const sameYear = now.getFullYear() === eventDate.getFullYear()
@@ -179,6 +156,7 @@ export default {
 
       // If rolling past midnight, display 'date'
       if (sameMonth && sameYear) {
+        // const day = now.getDate() - eventDate.getDate()  // to calculate the number of days ago
         return months[eventDate.getMonth()] + ' ' + eventDate.getDate() + ''
       }
 
@@ -209,7 +187,7 @@ export default {
 }
 .font-header {
   color: rgba(20, 23, 26, 0.8) !important;
-  font-size: 20px;
+  font-size: 20px !important;
   font-weight: bold;
   font-family: 'Montserrat';
 }
@@ -303,5 +281,29 @@ export default {
   display: inline;
   line-height: 1.3125;
   background: #03619c !important;
+}
+.overlay-style {
+  width: 400px;
+  padding-left: 0px;
+  padding-right: 0px;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  max-height: 530px;
+  z-index: 1;
+  min-width: 350px;
+  max-width: 400px;
+  margin-right: 20px;
+  border-top-right-radius: 16px;
+  border-top-left-radius: 16px;
+  align-self: flex-end;
+  box-sizing: border-box;
+  /* flex-basis: auto; */
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-height: 0px;
+  box-shadow: rgba(101, 119, 134, 0.2) 0px 0px 15px,
+    rgba(101, 119, 134, 0.15) 0px 0px 3px 1px;
 }
 </style>

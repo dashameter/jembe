@@ -14,17 +14,11 @@ Vue.directive('linkify', {
         email: '_blank',
       },
       nl2br: true,
-      attributes: {},
-      events: {
-        click(e) {
-          alert('Link clicked!')
-        },
-      },
       formatHref(href, type) {
         if (type === 'mention') {
           return `#${href}`
         } else if (type === 'hashtag') {
-          return `#/${href}`
+          return `#/tags/${href.substr(1)}`
         } else return href
       },
     })

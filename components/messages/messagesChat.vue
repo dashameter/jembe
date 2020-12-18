@@ -1,14 +1,16 @@
 <template>
   <div
-    style="height: 100vh"
     class="d-flex flex-column flex-grow-1"
     :class="{
       fullscreen: $vuetify.breakpoint.mdAndUp,
       halfscreen: $vuetify.breakpoint.smAndDown,
       mobile: $vuetify.breakpoint.xs,
+      chatoverlay: $route.name === 'discover',
+      messagestab: $route.name === 'messages-userName',
     }"
   >
     <v-row
+      v-if="$route.name === 'messages-userName'"
       align="center"
       no-gutters
       class="pl-3 pt-0 pb-0"
@@ -50,12 +52,14 @@
     <div
       id="scrollcontainer"
       style="
-        height: 100%;
         overflow-y: scroll;
         flex-shrink: 1;
         flex-direction: column-reverse;
         display: flex;
       "
+      :class="{
+        messagesheight: $route.name === 'messages-userName',
+      }"
     >
       <div>
         <v-row
@@ -65,7 +69,7 @@
           :justify="amIMessageSender(message) ? 'end' : 'start'"
         >
           <v-card
-            class="mt-1 px-4 py-2 mr-4"
+            class="mt-1 px-4 py-2 mr-4 ml-4"
             :class="{
               chatPartnerBubble: !amIMessageSender(message),
               meBubble: amIMessageSender(message),
@@ -78,13 +82,13 @@
               font-size: 16px;
               display: flex !important;
               flex-direction: column;
+              max-width: 350px;
             "
           >
             <div
               v-linkified:options="{ className: 'linkify' }"
               v-html="message.encMessage"
             />
-            <!-- <div>{{ getLastPartnerMessage(chatPartnerUserId) }}</div> -->
           </v-card>
         </v-row>
       </div>
@@ -121,6 +125,9 @@ Vue.directive('linkified', linkify)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default {
+  props: {
+    chatPartnerUserName: { type: String, default: '' },
+  },
   data() {
     return {
       isSendingReplyMessage: false,
@@ -128,21 +135,13 @@ export default {
       directMessageText: '',
       lastTimeCheckedReceived: 0,
       lastTimeCheckedSent: 0,
-      chatPartnerUserName: '',
       chatPartnerUserId: '',
     }
   },
   computed: {
     ...mapGetters(['getJams', 'getProfile', 'getDirectMessages']),
-    // ...mapGetters([
-    //   'getJams',
-    //   'getProfile',
-    //   'getDirectMessages',
-    //   'getLastPartnerMessage',
-    // ]),
   },
   async created() {
-    this.chatPartnerUserName = this.$route.params.userName
     if (this.chatPartnerUserName) {
       // TODO show snack error / redirect if user isn't signed up to jembe
       this.chatPartnerUserId = (
@@ -161,16 +160,6 @@ export default {
       'resolveUsername',
       'sendDirectMessage',
     ]),
-    // lastmessage(chatPartnerUserId) {
-    //   const chatPartnerMessages = this.getDirectMessages(
-    //     chatPartnerUserId
-    //   ).filter((message) => message.senderUserId === chatPartnerUserId)
-    //   console.log(
-    //     'last messsage',
-    //     chatPartnerMessages[chatPartnerMessages.length - 1]
-    //   )
-    //   return chatPartnerMessages[chatPartnerMessages.length - 1]
-    // },
     enterPress(event) {
       // TODO use text-area and add linebreaks to messages
       if (event.shiftKey === true) {
@@ -225,14 +214,6 @@ a.linkify :hover {
   text-decoration: underline !important;
 }
 
-/* .headerbar {
-  position: sticky;
-  top: 0;
-  height: 54px;
-  background-color: white;
-  border-bottom: solid 1px;
-  border-bottom-color: lightgray;
-} */
 .messageinput {
   border-top: solid 1px;
   border-top-color: lightgray;
@@ -248,5 +229,11 @@ a.linkify :hover {
   color: white;
   border-radius: 15px 15px 0px 15px;
   font-weight: 410;
+}
+.messagesheight {
+  height: 100%;
+}
+.chatoverlay {
+  max-height: 470px;
 }
 </style>
