@@ -153,13 +153,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([
-      'getJams',
-      'getProfile',
-      'getMyContactList',
-      'getLastPartnerMessage',
-      'badgeCount',
-    ]),
+    ...mapGetters(['getJams', 'getProfile', 'getMyContactList', 'badgeCount']),
   },
   async created() {
     this.showOnboardDialog =
@@ -169,6 +163,7 @@ export default {
     if (this.showOnboardDialog)
       this.$store.commit('setPresentedOnboarding', true)
 
+    this.fetchBookmarks()
     await this.fetchJams({
       view: '/discover',
       orderBy: [['$createdAt', 'desc']],
@@ -179,6 +174,7 @@ export default {
       'fetchJams',
       'refreshLikesInState',
       'refreshCommentCountInState',
+      'fetchBookmarks',
     ]),
   },
 }

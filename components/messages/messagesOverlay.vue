@@ -36,7 +36,7 @@
           <messagesContactlistSearch
             v-if="!chatPartnerUserName"
             class="px-5"
-            @chatpartnerselected="setChatPartnerUsername"
+            @chatpartnerselected="setChatPartnerUserName"
           />
           <messagesChat
             v-if="chatPartnerUserName"
@@ -47,8 +47,9 @@
             {{ chatPartnerUserName }}
           </messagesChat>
           <messagesContactlist
+            class="pt-4"
             v-if="!chatPartnerUserName"
-            @chatpartnerselected="setChatPartnerUsername"
+            @chatpartnerselected="setChatPartnerUserName"
           >
             {{ chatPartnerUserName }}
           </messagesContactlist>
@@ -88,7 +89,7 @@ export default {
   async created() {
     await this.fetchContactlist({ userId: this.$store.state.name.userId })
     this.getMyContactList.forEach((entry) => {
-      const userName = this.chatPartnerName(entry[1])
+      const userName = this.getChatPartnerUserName(entry[1])
       this.fetchUserInfo({ userName })
     })
     console.log('this.getMyContactList :>> ', this.getMyContactList)
@@ -96,11 +97,11 @@ export default {
   mounted() {},
   methods: {
     ...mapActions(['fetchContactlist', 'fetchUserInfo']),
-    setChatPartnerUsername(userName) {
+    setChatPartnerUserName(userName) {
       this.chatPartnerUserName = userName
       console.log('partnername', this.chatPartnerUserName)
     },
-    chatPartnerName(contact) {
+    getChatPartnerUserName(contact) {
       console.log('contact :>> ', contact)
       if (
         contact.senderUserName.toLowerCase() ===
@@ -303,7 +304,6 @@ export default {
   flex-direction: column;
   flex-shrink: 0;
   min-height: 0px;
-  box-shadow: rgba(101, 119, 134, 0.2) 0px 0px 15px,
-    rgba(101, 119, 134, 0.15) 0px 0px 3px 1px;
+  box-shadow: rgba(101, 119, 134, 0.2) 0px 0px 15px;
 }
 </style>

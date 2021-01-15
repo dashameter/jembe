@@ -3,13 +3,12 @@
     <!-- <v-card class="pa-4 mx-auto" max-width="600" elevation="0" tile> -->
     <v-row no-gutters>
       <v-col style="max-width: 65px" class="pl-4 pt-2">
-        <v-avatar color="grey">
+        <v-avatar color="lightgray">
           <v-img
             :src="getProfile($store.state.name.label).avatar"
           ></v-img> </v-avatar
       ></v-col>
       <v-col class="px-0">
-        <!-- {{ replyToJamId }} -->
         <Mentionable
           :keys="['@']"
           :items="items"
@@ -27,7 +26,7 @@
             class="jamtextinput"
             placeholder="Share what matters.."
             style="font-size: 16px; font-family: Roboto; line-height: 22px"
-            @keyup="validateText($event)"
+            @keyup="validateText()"
           />
           <template #no-result>
             <div class="noresult dim">
@@ -43,24 +42,31 @@
               </span>
             </div>
           </template>
-          <!-- <v-textarea
-            v-model="jamText"
-            :disabled="isLoading"
-            placeholder="Share what matters"
-            solo
-            flat
-            auto-grow
-            rows="6"
-            row-height="20"
-            style="font-size: 16px; font-family: Roboto; line-height: 22px"
-            :background-color="textValid.backgroundcolor"
-            :error="!textValid.isValid"
-            @keyup="validateText($event)"
-          ></v-textarea> -->
         </Mentionable>
+        <v-card
+          elevation="6"
+          :style="{
+            position: 'absolute',
+            background: 'white',
+            'z-index': 999999999,
+          }"
+        >
+          <Picker
+            v-if="showEmojiPicker"
+            v-click-outside="closeEmojiPicker"
+            color="#008de4"
+            set="twitter"
+            title="Pick your emoji"
+            emoji="point_up"
+            @select="addEmoji"
+          />
+        </v-card>
       </v-col>
     </v-row>
     <v-card-actions>
+      <v-btn class="ml-15" icon @click="showEmojiPicker = !showEmojiPicker">
+        <v-icon color="#008de4">mdi-emoticon-happy-outline </v-icon>
+      </v-btn>
       <v-spacer />
       <v-progress-circular
         size="30"
@@ -92,14 +98,17 @@
 // eslint-disable-next-line no-unused-vars
 import { mapActions, mapGetters } from 'vuex'
 import { Mentionable } from 'vue-mention'
+import { Picker } from 'emoji-mart-vue'
 
 export default {
   components: {
     Mentionable,
+    Picker,
   },
   props: { replyToJamId: { type: String, default: '' } },
   data() {
     return {
+      showEmojiPicker: false,
       items: [],
       loading: false,
       isLoading: false,
@@ -117,6 +126,13 @@ export default {
   computed: { ...mapGetters(['getProfile']) },
   methods: {
     ...mapActions(['sendJamAndRefreshJams', 'searchDashNames']),
+    closeEmojiPicker() {
+      this.showEmojiPicker = false
+    },
+    addEmoji(event) {
+      this.jamText = this.jamText + event.colons
+      this.validateText()
+    },
     async loadMentions(searchText = null) {
       if (!searchText) return
 
@@ -124,7 +140,7 @@ export default {
       this.items = (await this.searchDashNames(searchText)).map((n) => {
         return { value: n.toJSON().label, label: n.toJSON().label }
       })
-      console.log('search this.items :>> ', this.items)
+      // console.log('search this.items :>> ', this.items)
       this.loading = false
     },
     async postJam() {
@@ -137,6 +153,7 @@ export default {
       })
       this.isLoading = false
       this.jamText = ''
+      this.validateText()
       this.$emit('success')
     },
 
@@ -145,7 +162,8 @@ export default {
       //   console.log(event.srcElement.textLength)
 
       const { textValid } = this
-      const amountChars = event.srcElement.textLength
+      // const amountChars = event.srcElement.textLength
+      const amountChars = this.jamText.length
       const allowedChars = 280 // TODO maybe enforce in contract, consider how to handle not counting URL length
       const remainingChars = allowedChars - amountChars
 

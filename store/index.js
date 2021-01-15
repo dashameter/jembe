@@ -83,7 +83,7 @@ const getInitState = () => {
     presentedOnboarding: false,
     fundingAddress: '',
     mnemonic: process.env.MNEMONIC,
-    identityId: process.env.IDENTITYID,
+    // identityId: process.env.IDENTITYID, // DEPRECATED
     tmpPrivKey: '',
     session: {},
     validSessionIdentities: {},
@@ -105,25 +105,61 @@ const getInitState = () => {
     follows: { following: {}, followers: {} },
     likedJamsByUsername: {},
     likesCount: {},
+    bookmarkedJams: [],
     commentsCount: {},
     rejamsCount: {},
     isClientError: false,
     isSyncing: false,
-    snackbar: { show: false, color: 'red', text: '', timestamp: 0 },
+    snackbar: { show: false, color: 'red', text: '', timestamp: 0, link: null },
     directMessage: {
       dm: [],
-      lastTimeCheckedReceived: 0,
-      lastTimeCheckedSent: 0,
+      // lastTimeCheckedReceived: 0,
+      // lastTimeCheckedSent: 0,
     },
     contactList: {},
     notifications: [],
     jamsById: {},
     lastSeen: {},
+    dappState: { lastSeen: {} },
   }
 }
 export const state = () => getInitState()
 
 export const getters = {
+  getContactListNames(state) {
+    const contactList = []
+
+    for (const [, contactDoc] of Object.entries(state.contactList)) {
+      const contact =
+        contactDoc.senderUserId === state.name.userId
+          ? contactDoc.receiverUserName
+          : contactDoc.senderUserName
+
+      contactList.push(contact)
+    }
+    return contactList
+  },
+  getUnreadDirectMessageCount(state, getters) {
+    let unreadCount = 0
+
+    for (const [, contactDoc] of Object.entries(state.contactList)) {
+      const { receiverUserName, senderUserName } = contactDoc
+
+      const chatPartnerUserName =
+        receiverUserName.toLowerCase() === state.name.label.toLowerCase()
+          ? senderUserName
+          : receiverUserName
+
+      unreadCount += getters.getUnreadDirectMessageCountByChatPartnerUserName(
+        chatPartnerUserName
+      )
+    }
+
+    return unreadCount
+  },
+  getTempIdentityId() {
+    return client.account.getIdentityIds()[0]
+  },
   getValidSessionIdentity: (state) => (doc) => {
     console.log('validsession :>> ', doc)
     const sessionIdentityId = doc.$ownerId
@@ -155,16 +191,51 @@ export const getters = {
       return null
     }
   },
-  getLastPartnerMessage: (state, getters) => (chatPartnerUserId) => {
-    const chatPartnerMessages = getters
-      .getDirectMessages(chatPartnerUserId)
-      .filter((message) => message.senderUserId === chatPartnerUserId)
+  getLastPartnerMessage: (state, getters) => (chatPartnerUserName) => {
+    const chatPartnerMessages = state.directMessage.dm.filter((message) => {
+      return message.senderUserName === chatPartnerUserName
+    })
     const lastDoc = chatPartnerMessages[chatPartnerMessages.length - 1]
     return lastDoc ? lastDoc.encMessage : ''
   },
-  badgeCount: (state) => (eventType) =>
-    state.notifications.filter((n) => n.$createdAt > state.lastSeen[eventType])
-      .length,
+  getLastPartnerMessageTime: (state, getters) => (chatPartnerUserName) => {
+    const chatPartnerMessages = state.directMessage.dm.filter((message) => {
+      return message.senderUserName === chatPartnerUserName
+    })
+    const lastDoc = chatPartnerMessages[chatPartnerMessages.length - 1]
+    console.log('lastDoc :>> ', lastDoc)
+    return lastDoc ? lastDoc.$createdAt : 0
+  },
+  getUnreadDirectMessageCountByChatPartnerUserName: (state, getters) => (
+    chatPartnerUserName
+  ) => {
+    const lastSeenTimestamp = state.dappState.lastSeen[chatPartnerUserName] || 0
+    console.log(
+      'getUnreadDirectMessageCountByChatPartnerUserName lastSeen timestamp:>> ',
+      chatPartnerUserName,
+      lastSeenTimestamp
+    )
+    const chatPartnerMessages = state.directMessage.dm.filter((message) => {
+      return (
+        message.senderUserName === chatPartnerUserName &&
+        message.$createdAt > lastSeenTimestamp
+      )
+    })
+
+    return chatPartnerMessages.length
+  },
+  badgeCount: (state, getters) => (eventType) => {
+    console.log('badgecount, eventType :>> ', eventType)
+    if (eventType === 'notifications') {
+      return state.notifications.filter(
+        (n) => n.$createdAt > state.lastSeen.notifications
+      ).length
+    } else if (eventType === 'messages') {
+      console.log('message counting')
+      console.log('object :>> ', getters.getUnreadDirectMessageCount)
+      return getters.getUnreadDirectMessageCount
+    } else return 0
+  },
   getLastSeen: (state) => (eventType) => {
     return state.lastSeen[eventType] || 0
   },
@@ -185,16 +256,13 @@ export const getters = {
     }
   },
   getMyContactList(state) {
-    console.log('contactlist', Object.entries(state.contactList))
     return Object.entries(state.contactList)
   },
-  getDirectMessages: (state) => (chatPartnerUserId) => {
-    console.log(state.directMessage.dm)
+  getDirectMessages: (state) => (chatPartnerUserName) => {
     const directMessages = state.directMessage.dm.filter((message) => {
-      console.log('message :>> ', message)
       return (
-        message.senderUserId === chatPartnerUserId ||
-        message.receiverUserId === chatPartnerUserId
+        message.senderUserId === chatPartnerUserName ||
+        message.receiverUserId === chatPartnerUserName
       )
     })
 
@@ -268,9 +336,21 @@ export const getters = {
   getLikedJamsByUsername: (state) => (userName) => {
     return state.likedJamsByUsername[userName] || []
   },
+  getiBookmarked: (state) => (jamId) => {
+    const bookmarkedJams = state.bookmarkedJams.filter(
+      (jam) => jam.$id === jamId
+    )
+    return bookmarkedJams.length > 0
+  },
+  getBookmarkedJams(state) {
+    return state.bookmarkedJams
+  },
 }
 
 export const mutations = {
+  setLastSeenDirectMessage(state, { chatPartnerUserName, timestamp }) {
+    Vue.set(state.dappState.lastSeen, chatPartnerUserName, timestamp)
+  },
   setValidSessionIdentity(state, session) {
     if (state.validSessionIdentities[session.sessionIdentityId])
       state.validSessionIdentities[session.sessionIdentityId].push(session)
@@ -281,6 +361,10 @@ export const mutations = {
   },
   setLikedJamsByUsername(state, { jams, userName }) {
     Vue.set(state.likedJamsByUsername, userName, jams)
+  },
+  setBookmarked(state, jams) {
+    console.log('bookmarkedJams', jams)
+    Vue.set(state, 'bookmarkedJams', jams)
   },
   setLastSeen(state, { eventType, lastSeenTimestamp }) {
     Vue.set(state.lastSeen, eventType, lastSeenTimestamp)
@@ -316,7 +400,8 @@ export const mutations = {
     Vue.set(state.contactList, sortedUserIds, contactJSON)
   },
   setDirectMessage(state, directMessage) {
-    Vue.set(state, 'directMessage', directMessage)
+    console.log('directMessage :>> ', directMessage)
+    Vue.set(state.directMessage, 'dm', directMessage.dm)
   },
   updateDirectMessageSending(state, { tmp$id, directMessage }) {
     const idx = state.directMessage.dm.findIndex(
@@ -355,8 +440,12 @@ export const mutations = {
     console.log('setting funding address', address)
     state.fundingAddress = address
   },
-  setIdentity(state, identityId) {
-    state.identityId = identityId
+  // DEPRECATED
+  // setIdentity(state, identityId) {
+  //   state.identityId = identityId.toString()
+  // },
+  setMnemonic(state, mnemonic) {
+    state.mnemonic = mnemonic
   },
   setTmpPrivKey(state, tmpPrivKey) {
     state.tmpPrivKey = tmpPrivKey
@@ -450,9 +539,10 @@ export const mutations = {
     // state.name.identityId = identityId
     Vue.set(state.name, 'identityId', identityId)
   },
-  setSnackBar(state, { text, color = 'red' }) {
+  setSnackBar(state, { text, color = 'red', link = null }) {
     state.snackbar.text = text
     state.snackbar.color = color
+    state.snackbar.link = link
     state.snackbar.show = true
     state.snackbar.timestamp = timestamp()
   },
@@ -584,6 +674,66 @@ export const actions = {
     })
     console.log('seen', lastSeenTimestampResult)
   },
+  async bookmarkJam(
+    { dispatch, state },
+    { jamId, isBookmarked = true, opUserId, opUserName, userName }
+  ) {
+    const bookmark = {
+      jamId,
+      isBookmarked,
+      userId: state.name.userId,
+      userName,
+      opUserId,
+      opUserName,
+    }
+    await dispatch('submitDocument', { type: 'bookmarks', doc: bookmark })
+  },
+  async fetchBookmarks({ commit, dispatch, state }) {
+    const queryOpts = {
+      limit: 100,
+      startAt: 1,
+      orderBy: [['$createdAt', 'desc']],
+      where: [['userId', '==', state.name.userId]],
+    }
+
+    let bookmarksByUserId = await dispatch('queryDocuments', {
+      dappName: 'jembe',
+      typeLocator: 'bookmarks',
+      queryOpts,
+    })
+
+    bookmarksByUserId = bookmarksByUserId.map((x) => x.toJSON())
+
+    console.log('bookmarksByUserId :>>', bookmarksByUserId)
+
+    const bookmarked = []
+    const notBookmarked = []
+
+    bookmarksByUserId.forEach((bookmark) => {
+      console.log('bookmark', bookmark)
+      if (
+        !notBookmarked.includes(bookmark.jamId) &&
+        !bookmarked.includes(bookmark.jamId)
+      ) {
+        if (bookmark.isBookmarked) {
+          bookmarked.push(bookmark.jamId)
+          console.log('bookmarked', bookmarked)
+        } else {
+          notBookmarked.push(bookmark.jamId)
+          console.log('notbookmarked', notBookmarked)
+        }
+      }
+    })
+    const promisedBookmarks = bookmarked.map((jamId) =>
+      dispatch('fetchJamById', jamId)
+    )
+    const bookmarkedJamsByUser = await Promise.all(promisedBookmarks)
+    //   jams: bookmarkedJamsByUser,
+    //   jams: bookmarkedJamsByUser,
+    //   userName: state.name.label,
+    // })
+    commit('setBookmarked', bookmarkedJamsByUser)
+  },
   async fetchLikesByUser({ commit, dispatch, state }, { userId, userName }) {
     const queryOpts = {
       limit: 20,
@@ -676,7 +826,7 @@ export const actions = {
   },
   async fetchContactlist({ commit, dispatch, state }, { userId }) {
     const queryOptsReceived = {
-      limit: 10,
+      limit: 100,
       startAt: 1,
       orderBy: [['$createdAt', 'desc']],
       where: [['receiverUserId', '==', userId]],
@@ -689,7 +839,7 @@ export const actions = {
     })
 
     const queryOptsSent = {
-      limit: 10,
+      limit: 100,
       startAt: 1,
       orderBy: [['$createdAt', 'desc']],
       where: [['senderUserId', '==', userId]],
@@ -768,9 +918,11 @@ export const actions = {
     receivedResult.then((receivedResult) => {
       console.log('receivedResult :>> ', receivedResult)
 
-      if (receivedResult[0])
+      if (receivedResult[0]) {
         directMessage.lastTimeCheckedReceived = receivedResult[0].toJSON().$createdAt
+      }
 
+      let showedNotification = false
       receivedResult.forEach((element) => {
         const decryptedMessage = { ...element.toJSON() }
 
@@ -785,7 +937,57 @@ export const actions = {
           {}
         )[0][1]
 
+        // Add new received messages to array that we commit to state
         directMessage.dm.push(decryptedMessage)
+
+        // Only show 1 notification of the newest received message
+        if (showedNotification) return
+
+        // Don't show notification if we have focus on the same conversation
+        if (
+          document.hasFocus() &&
+          this.$router.currentRoute.path ===
+            '/messages/' + decryptedMessage.senderUserName.toLowerCase()
+        )
+          return
+
+        // Don't show notification if it's an old message
+        if (
+          state.dappState.lastSeen[
+            decryptedMessage.senderUserName.toLowerCase()
+          ] >= decryptedMessage.$createdAt
+        )
+          return
+
+        showedNotification = true // Ensure code below is not looped over again to avoid showing an older msg in the notification
+
+        const title = decryptedMessage.senderUserName
+
+        const options = {
+          body: decryptedMessage.encMessage,
+          tag: 'messages',
+          vibrate: [100, 50, 100],
+          data: {
+            name: decryptedMessage.senderUserName,
+            timestamp: decryptedMessage.$createdAt,
+          },
+        }
+
+        const notification = new Notification(title, options)
+
+        notification.onshow = function (event) {
+          document.getElementById('directMessageDing').play()
+        }
+
+        const that = this
+
+        notification.onclick = function (event) {
+          that.$router.push('/messages/' + notification.data.name)
+          console.log('event :>> ', event)
+          parent.focus()
+          window.focus()
+          event.target.close()
+        }
       })
     })
 
@@ -941,7 +1143,9 @@ export const actions = {
       // Init documents.broadcast batch array
       const createDocuments = []
 
-      const identity = await client.platform.identities.get(state.identityId)
+      const identity = await client.platform.identities.get(
+        client.account.getIdentityIds()[0]
+      )
 
       // TODO documents.create is slow causing lag in chat UX (appendDirectMessageSending)
       const directMessageDocument = await client.platform.documents.create(
@@ -1332,7 +1536,9 @@ export const actions = {
     { dispatch, state },
     { jamText, replyToJamId = '', reJamId = '', opUserId = '', opUserName = '' }
   ) {
-    const identity = await client.platform.identities.get(state.identityId)
+    const identity = await client.platform.identities.get(
+      client.account.getIdentityIds()[0]
+    )
 
     const tags = linkify
       .find(jamText, 'hashtag')
@@ -2173,7 +2379,9 @@ export const actions = {
     const { platform } = client
 
     try {
-      const identity = await platform.identities.get(state.identityId)
+      const identity = await platform.identities.get(
+        client.account.getIdentityIds()[0]
+      )
 
       const docPromises = docs.map((doc) =>
         platform.documents.create(`${contract}.${type}`, identity, doc)
@@ -2200,6 +2408,127 @@ export const actions = {
       console.error('Something went wrong:', e)
     }
   },
+  async fetchDappState({ commit, dispatch, state, getters }) {
+    const queryOpts = {
+      limit: 1,
+      startAt: 1,
+      orderBy: [['$updatedAt', 'desc']],
+      where: [['userId', '==', state.name.userId]],
+    }
+    const result = await dispatch('queryDocuments', {
+      dappName: 'jembe',
+      typeLocator: 'state',
+      queryOpts,
+    })
+    if (result[0]) {
+      // console.log('fetchDappState result :>> ', result[0])
+      // console.log('fetchDappState result data.state:>> ', result[0].data.state)
+      const base64 = Buffer.from(result[0].data.state, 'base64').toString(
+        'ascii'
+      )
+      // console.log('dappstate base64 :>> ', base64)
+
+      const fetchedState = JSON.parse(base64)
+      // console.log('dappstate state :>> ', fetchedState)
+
+      const dmTimes = {}
+      fetchedState.otherDirectMessageTimestamps.forEach((el) => {
+        console.log('dappstate el :>> ', el)
+        dmTimes[el[0]] = el[1]
+      })
+
+      // console.log('dmTimes :>> ', dmTimes)
+
+      getters.getContactListNames.forEach((name) => {
+        console.log('dappstate looping to commit contacts', name)
+        const nName = name.toLowerCase()
+
+        let timestamp
+
+        if (Object.keys(dmTimes).includes(nName)) {
+          timestamp = dmTimes[nName]
+          delete dmTimes[nName]
+        } else {
+          timestamp = fetchedState.lastDirectMessageTimestamp
+        }
+        commit('setLastSeenDirectMessage', {
+          chatPartnerUserName: nName,
+          timestamp,
+        })
+      })
+      // console.log('dappstate not applied other', dmTimes)
+      Object.keys(dmTimes).forEach((name) => {
+        commit('setLastSeenDirectMessage', {
+          chatPartnerUserName: name.toLowerCase(),
+          timestamp: dmTimes[name],
+        })
+      })
+    }
+  },
+  async saveDappState({ commit, dispatch, state, getters }) {
+    console.log('dappstate saveDappState()')
+    // FIXME store userId instead of userName to dpp
+    const contactList = []
+
+    // eslint-disable-next-line no-unused-vars
+    for (const [userIds, contactDoc] of Object.entries(state.contactList)) {
+      // console.log('contactDoc :>> ', contactDoc)
+      const contact =
+        contactDoc.senderUserId === state.name.userId
+          ? [
+              contactDoc.receiverUserId,
+              contactDoc.receiverUserName,
+              contactDoc.$createdAt,
+            ]
+          : [
+              contactDoc.senderUserId,
+              contactDoc.senderUserName,
+              contactDoc.$createdAt,
+            ]
+
+      contactList.push(contact)
+    }
+
+    // console.log('dappstate contactListNames :>> ', contactList)
+
+    const contactListLastSeen = contactList.map((contact) => [
+      contact[1],
+      state.dappState.lastSeen[contact[1]] || contact[2],
+    ])
+
+    const lastIndex = state.directMessage.dm.length - 1
+
+    // eslint-disable-next-line no-unused-vars
+    const lastDirectMessageTimestamp =
+      state.directMessage.dm[lastIndex].$createdAt
+
+    const contactListLastSeenFiltered = contactListLastSeen.filter(
+      (el) => el[1] < lastDirectMessageTimestamp
+    )
+
+    console.log(
+      'dappstate contactListLastSeenFiltered :>> ',
+      contactListLastSeenFiltered
+    )
+
+    const dappState = {
+      lastDirectMessageTimestamp,
+      otherDirectMessageTimestamps: contactListLastSeenFiltered,
+    }
+
+    const base64 = Buffer.from(JSON.stringify(dappState)).toString('base64')
+
+    console.log('dappstate base64 :>> ', base64)
+
+    const doc = { userId: state.name.userId, state: base64 }
+
+    const result = await dispatch('submitDocument', {
+      contract: 'jembe',
+      type: 'state',
+      doc,
+    })
+    console.log('saveDappState result :>> ', result)
+  },
   async submitDocument(
     // eslint-disable-next-line no-unused-vars
     { commit, dispatch, state },
@@ -2213,7 +2542,8 @@ export const actions = {
     const { platform } = client
 
     try {
-      const { identityId } = state
+      const identityId = client.account.getIdentityIds()[0]
+      // const { identityId } = state
       console.log({ identityId })
       const identity = await platform.identities.get(identityId)
       // const identity = await cachedOrGetIdentity(client, identityId)
@@ -2252,7 +2582,14 @@ export const actions = {
   //   const publicKey = curIdentityHDKey.publicKey.toString()
   //   return publicKey
   // },
-  async syncSession({ dispatch, state, commit }) {
+  async syncSession({ dispatch, state, commit, getters }) {
+    const identityId = client.account.getIdentityIds()[0]
+    console.log('identityId :>> ', identityId)
+
+    // Can't sync before we create or recover an identityId
+    if (!identityId) return
+    commit('setLoadingStep', 2)
+
     const dappName = 'primitives'
     const typeLocator = 'Session'
     const queryOpts = {
@@ -2260,7 +2597,7 @@ export const actions = {
       startAt: 1,
       orderBy: [['expiresAt', 'desc']],
       where: [
-        ['sessionIdentityId', '==', state.identityId.toString()],
+        ['sessionIdentityId', '==', identityId],
         ['expiresAt', '>', process.env.STAY_LOGGED_IN ? 0 : timestamp()], // TODO deploy, enable credential check
         // ['expiresAt', '>', 0],
       ],
@@ -2282,16 +2619,16 @@ export const actions = {
 
     // Decrypt the decryption private key for DirectMessages
     // FIXME move decryption key to Identity
-    const acc = await client.wallet.getAccount({ index: 0 })
-    const tmpPrivKey = acc.getIdentityHDKeyByIndex(0, 0).privateKey.toString()
-    const tmpPubKey = acc
-      .getIdentityHDKeyByIndex(0, 0)
-      .privateKey.publicKey.toBuffer()
-      .toString('base64')
+    // const acc = await client.wallet.getAccount({ index: 0 })
+    // const tmpPrivKey = acc.getIdentityHDKeyByIndex(0, 0).privateKey.toString()
+    // const tmpPubKey = acc
+    //   .getIdentityHDKeyByIndex(0, 0)
+    //   .privateKey.publicKey.toBuffer()
+    //   .toString('base64')
 
-    console.log('tmpPrivKey, tmpPubKey :>> ', tmpPrivKey, tmpPubKey)
-    console.log('acc.getIdentityIds(); :>> ', acc.getIdentityIds())
+    // console.log('tmpPrivKey, tmpPubKey :>> ', tmpPrivKey, tmpPubKey)
 
+    const alreadyHasSession = getters.hasSession
     if (session) {
       const receiverPrivKey = client.account
         .getIdentityHDKeyByIndex(0, 0)
@@ -2306,18 +2643,20 @@ export const actions = {
         receiverPrivKey,
         senderPubKey
       )
-      console.log(
-        'account.getIdentityIds(); :>> ',
-        client.account.getIdentityIds()
-      )
 
       session.pvtKey = decrypt(
         receiverPrivKey,
         session.encPvtKey,
         senderPubKey
       ).data
+
+      if (!alreadyHasSession) {
+        await dispatch('fetchContactlist', { userId: state.name.userId })
+        await dispatch('fetchDappState')
+      }
     }
     commit('setSession', { session })
+    // Only load dappState if this is the first session sync / login
   },
   async fetchSignups({ dispatch, commit, getters }) {
     console.log('fetchSignups()')
@@ -2363,27 +2702,20 @@ export const actions = {
       if (message === 'Expect mnemonic to be provided') {
         message = 'You entered the wrong PIN / Password.'
       }
-      commit('setClientErrors', 'Connecting to Evonet: ' + message)
+      commit('setClientErrors', 'Connecting to Testnet: ' + message)
     }
     console.log("I'm done awaiting client.isReady()....")
 
-    const account = await client.wallet.getAccount()
-    const confirmedBalance = account.getConfirmedBalance()
+    const confirmedBalance = client.account.getConfirmedBalance()
     console.log('Confirmed Balance: ' + confirmedBalance)
     if (confirmedBalance > 500000) {
-      if (state.identityId === null) {
-        try {
-          this.registerIdentity()
-        } catch (e) {
-          console.log('No success in registering an identity, trying again ...')
-          dispatch('showSnackbar', {
-            text: e.message,
-          })
-          this.registerIdentity()
-        }
+      if (!client.account.getIdentityIds()[0]) {
+        dispatch('registerIdentity')
       } else {
-        console.log('Found existing identityId')
-        console.log(state.identityId)
+        console.log(
+          'Found existing identityId',
+          client.account.getIdentityIds[0]
+        )
       }
     } else {
       try {
@@ -2400,11 +2732,13 @@ export const actions = {
       }
 
       // TODO need to check if identity belongs to mnemonic
-      if (state.identityId === null) {
+      if (!client.account.getIdentityIds()[0]) {
         dispatch('registerIdentityOnceBalance')
       } else {
-        console.log('Found existing identityId')
-        console.log(state.identityId)
+        console.log(
+          'Found existing identityId',
+          client.account.getIdentityIds()[0]
+        )
       }
     }
   },
@@ -2436,70 +2770,14 @@ export const actions = {
   // eslint-disable-next-line no-unused-vars
   async initWallet({ state, commit, dispatch }) {
     commit('clearClientErrors')
+
     console.log('Initializing Dash.Client with mnemonic: ')
-    console.log('Encrypted mnemonic:', state.mnemonic)
+    console.log('Mnemonic:', state.mnemonic)
+
     let clientOpts = {
       passFakeAssetLockProofForTests: process.env.LOCALNODE,
       dapiAddresses: process.env.DAPIADDRESSES,
-      // dapiAddresses: [
-      //   '54.212.206.131:3000',
-      //   // '54.184.89.215:3000',
-      //   '35.167.241.7:3000',
-      //   '54.244.159.60:3000',
-      //   '34.219.79.193:3000',
-      //   '34.223.226.20:3000',
-      //   '34.216.133.190:3000',
-      //   '52.88.13.87:3000',
-      //   '54.203.2.102:3000',
-      //   '18.236.73.143:3000',
-      //   '54.187.128.127:3000',
-      //   '54.190.136.191:3000',
-      //   '35.164.4.147:3000',
-      //   '54.189.121.60:3000',
-      //   '54.149.181.16:3000',
-      //   '54.202.214.68:3000',
-      //   '34.221.5.65:3000',
-      //   '34.219.43.9:3000',
-      //   '54.190.1.129:3000',
-      //   '54.186.133.94:3000',
-      //   '54.190.26.250:3000',
-      //   '52.88.38.138:3000',
-      //   // '34.221.185.231:3000',
-      //   '54.189.73.226:3000',
-      //   '34.220.38.59:3000',
-      //   '54.186.129.244:3000',
-      //   '52.32.251.203:3000',
-      //   '54.184.71.154:3000',
-      //   '54.186.22.30:3000',
-      //   '54.185.186.111:3000',
-      //   '34.222.91.196:3000',
-      //   // '54.245.217.116:3000',
-      //   '54.244.203.43:3000',
-      //   '54.69.71.240:3000',
-      //   '52.88.52.65:3000',
-      //   '18.236.139.199:3000',
-      //   '52.33.251.111:3000',
-      //   '54.188.72.112:3000',
-      //   // '52.33.97.75:3000',
-      //   '54.200.73.105:3000',
-      //   '18.237.194.30:3000',
-      //   '52.25.73.91:3000',
-      //   // '18.237.255.133:3000',
-      //   '34.214.12.133:3000',
-      //   '54.149.99.26:3000',
-      //   '18.236.235.220:3000',
-      //   // '35.167.226.182:3000',
-      //   '34.220.159.57:3000',
-      //   '54.186.145.12:3000',
-      //   // '34.212.169.216:3000',
-      // ],
-      // ],
-
       wallet: { mnemonic: state.mnemonic },
-      // mnemonic: await dispatch('decryptMnemonic', {
-      //   encMnemonic: state.mnemonic,
-      //   pin: mnemonicPin,
-      // }),
       apps: {
         dpns: process.env.DPNS,
         primitives: {
@@ -2518,7 +2796,7 @@ export const actions = {
     // Remove undefined keys
     clientOpts = JSON.parse(JSON.stringify(clientOpts))
 
-    console.log('clientOpts :>> ', clientOpts)
+    console.log('clientOpts :>> ', { ...clientOpts })
 
     client = new Dash.Client(clientOpts)
 
@@ -2530,10 +2808,12 @@ export const actions = {
 
     // Timeout isReady() since we can't catch timeout errors
     clientTimeout = setTimeout(() => {
-      commit('setClientErrors', 'Connection to Evonet timed out.')
+      commit('setClientErrors', 'Connection to Testnet timed out.')
     }, 500000) // TODO set sane timeout
 
     client.account = await client.wallet.getAccount({ index: 0 })
+
+    commit('setMnemonic', client.wallet.exportWallet())
     console.log('client :>> ', client)
     console.log('client.wallet :>> ', client.wallet)
     console.log('client.account :>> ', client.account)
@@ -2588,7 +2868,10 @@ export const actions = {
         // this.$axios.get(
         //   `https://us-central1-evodrip.cloudfunctions.net/evofaucet/drip/${address}`
         // ),
-        this.$axios.get(`http://134.122.104.155:5050/drip/${address}`),
+        // this.$axios.get(`http://134.122.104.155:5050/drip/${address}`),
+        // this.$axios.get(`http://155.138.203.42:5050/drip/${address}`),
+        this.$axios.get(`http://autofaucet-1.dashevo.io:5050/drip/${address}`),
+        this.$axios.get(`http://autofaucet-2.dashevo.io:5050/drip/${address}`),
       ]
       if (process.env.DAPIADDRESSES && process.env.DAPIADDRESSES[0]) {
         const ip = process.env.DAPIADDRESSES[0].split(':')[0]
@@ -2613,7 +2896,7 @@ export const actions = {
         'account.getIdentityIds(); :>> ',
         client.account.getIdentityIds()
       )
-      commit('setIdentity', identity.id)
+      // commit('setIdentity', identity.id) // DEPRECATED
       commit('setLoadingStep', 2)
     } catch (e) {
       console.log('identity register error')
@@ -2659,10 +2942,6 @@ export const actions = {
       },
     }
   ) {
-    console.log(
-      'client.getApps() :>> ',
-      client.getApps().get('primitives').contractId.toString()
-    )
     // if (typeLocator !== 'Session') {
     console.log(
       'Querying documents...',

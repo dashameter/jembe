@@ -1,6 +1,10 @@
 <template>
   <v-app>
     <v-main>
+      <audio
+        id="directMessageDing"
+        :src="require('@/assets/directmessage-ding.mp3')"
+      />
       <v-row no-gutters class="flex-nowrap fill-height" justify="center">
         <v-col
           v-if="$vuetify.breakpoint.smAndUp && $store.getters.hasSession"
@@ -147,7 +151,28 @@
 
       <v-snackbar v-model="snackbar.show" :top="'top'" :color="snackbar.color">
         {{ snackbar.text }}
-        <v-btn dark absolute text right small @click="snackbar.show = false">
+        <v-btn
+          v-if="snackbar.link"
+          dark
+          absolute
+          text
+          right
+          small
+          style="padding-bottom: 6px"
+          @click="snackBarRouterPush()"
+        >
+          View
+        </v-btn>
+        <v-btn
+          v-else
+          dark
+          absolute
+          text
+          right
+          small
+          style="padding-bottom: 6px"
+          @click="snackbar.show = false"
+        >
           Close
         </v-btn>
       </v-snackbar>
@@ -169,7 +194,13 @@ export default {
     return {
       showComposeJamDialog: false,
       // focused: false,
-      snackbar: { show: false, color: 'red', text: '', timestamp: 0 },
+      snackbar: {
+        show: false,
+        color: 'red',
+        text: '',
+        timestamp: 0,
+        link: null,
+      },
       items: [
         {
           icon: 'mdi-home-outline',
@@ -214,6 +245,13 @@ export default {
     },
   },
   async created() {
+    /// NOTIFICATIONS
+    Notification.requestPermission(function (status) {
+      console.log('Notification permission status:', status)
+    })
+
+    /// NOTIFICATIONS
+
     // await this.initWallet()
     this.$store.watch(
       (state) => state.snackbar.timestamp,
@@ -226,11 +264,13 @@ export default {
     await this.initOrCreateAccount({})
     this.loopSyncSession() // TODO phaseb, launch this userId specific after name entry
     this.loopFetchNotifications()
+    this.loopFetchDirectMessages()
   },
   mounted() {},
   methods: {
     ...mapActions([
       // 'initWallet',
+      'fetchDirectMessages',
       'initOrCreateAccount',
       'syncSession',
       'resetStateKeepAccounts',
@@ -239,7 +279,22 @@ export default {
       'fetchLastSeen',
       'fetchNotifications',
       'saveLastSeen',
+      'fetchContactlist',
     ]),
+    snackBarRouterPush() {
+      this.$router.push(this.snackbar.link)
+      this.snackbar.show = false
+    },
+    async loopFetchDirectMessages() {
+      if (this.$store.getters.hasSession) {
+        await this.fetchDirectMessages()
+        await this.fetchContactlist({ userId: this.$store.state.name.userId })
+      }
+
+      await sleep(1000)
+
+      this.loopFetchDirectMessages()
+    },
     logout() {
       this.resetStateKeepAccounts()
       this.$router.push('/')
@@ -266,19 +321,12 @@ export default {
       this.loopFetchNotifications()
     },
     async loopSyncSession() {
-      console.log('loopSyncSession')
-      if (this.$store.state.identityId === null) {
+      if (!this.$store.getters.getTempIdentityId) {
         await sleep(1000)
         this.loopSyncSession()
         return
       }
-      // console.log('loopSyncSession()')
       await this.syncSession()
-
-      // console.log(
-      //   'Login state: state.session',
-      //   this.$store.state.session
-      // )
 
       // State change to LoggedIn
       if (this.$store.getters.hasSession && this.isIndexRoute) {
@@ -422,5 +470,52 @@ export default {
   display: inline;
   line-height: 1.3125;
   background: #03619c !important;
+}
+
+span.emoji {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: baseline;
+  *vertical-align: auto;
+  *zoom: 1;
+  *display: inline;
+  width: 1em;
+  height: 1em;
+  background-size: 1em;
+  background-repeat: no-repeat;
+  text-indent: -9999px;
+  background-position: 50%, 50%;
+  background-size: contain;
+}
+
+span.emoji-sizer {
+  line-height: 0.81em;
+  font-size: 1em;
+  margin: -2px 0;
+}
+
+span.emoji-outer {
+  display: -moz-inline-box;
+  display: inline-block;
+  *display: inline;
+  height: 1em;
+  width: 1em;
+}
+
+span.emoji-inner {
+  display: -moz-inline-box;
+  display: inline-block;
+  text-indent: -9999px;
+  width: 100%;
+  height: 100%;
+  vertical-align: baseline;
+  *vertical-align: auto;
+  *zoom: 1;
+}
+
+img.emoji {
+  width: 1em;
+  height: 1em;
 }
 </style>

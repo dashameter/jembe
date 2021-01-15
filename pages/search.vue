@@ -22,3 +22,11 @@
     </v-container>
   </v-col>
 </template>
+
+<script>
+export default {
+  async created() {},
+}
+</script>
+
+<style></style>

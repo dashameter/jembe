@@ -3,9 +3,14 @@
 import Vue from 'vue'
 import linkifyStr from 'linkifyjs/string'
 
+const EmojiConvertor = require('emoji-js')
+const emoji = new EmojiConvertor()
+emoji.img_set = 'twitter'
+emoji.replace_mode = 'css'
+
 Vue.directive('linkify', {
   update: (el, binding) => {
-    el.innerHTML = linkifyStr(binding.value, {
+    const linkified = linkifyStr(binding.value, {
       //   defaultProtocol: 'https', // TODO production enable https
       target: {
         mention: '_parent',
@@ -22,5 +27,6 @@ Vue.directive('linkify', {
         } else return href
       },
     })
+    el.innerHTML = emoji.replace_colons(linkified)
   },
 })

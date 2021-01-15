@@ -24,6 +24,8 @@
     <v-divider />
     <v-text-field
       v-model="directMessageText"
+      aria-autocomplete="off"
+      autocomplete="off"
       :disabled="isSendingReplyMessage"
     /><v-btn
       :loading="isSendingReplyMessage"

@@ -43,35 +43,54 @@
         elevation="0"
         tile
         nuxt
-        @click="selectChatPartner(chatPartnerName(entry[1]))"
+        @click="selectChatPartner(chatPartnerUserName(entry[1]))"
       >
         <v-list-item two-line>
-          <nuxt-link :to="'/' + chatPartnerName(entry[1])">
-            <v-list-item-avatar
-              style="margin-top: 13px"
-              color="lightgray"
-              size="48"
+          <nuxt-link :to="'/' + chatPartnerUserName(entry[1])">
+            <v-badge
+              :content="
+                getUnreadDirectMessageCountByChatPartnerUserName(
+                  chatPartnerUserName(entry[1])
+                )
+              "
+              :value="
+                getUnreadDirectMessageCountByChatPartnerUserName(
+                  chatPartnerUserName(entry[1])
+                )
+              "
+              color="red"
+              overlap
+              style="top: 10px; right: 18px"
             >
-              <v-img
-                class="elevation-6"
-                :src="getProfile(chatPartnerName(entry[1])).avatar"
-              ></v-img> </v-list-item-avatar
-          ></nuxt-link>
+              <v-list-item-avatar
+                style="margin-top: 0px; margin-right: -5px"
+                color="lightgray"
+                size="48"
+              >
+                <v-img
+                  class="elevation-6"
+                  :src="getProfile(chatPartnerUserName(entry[1])).avatar"
+                ></v-img>
+              </v-list-item-avatar>
+            </v-badge>
+          </nuxt-link>
           <v-list-item-content
             class="d-inline-block text-nowrap"
             style="max-width: 600px"
           >
             <v-list-item-title>
               <span style="font-weight: bold" class="truncate">
-                {{ chatPartnerName(entry[1]) }}
+                {{ chatPartnerUserName(entry[1]) }}
               </span>
-              @{{ chatPartnerName(entry[1]) }}
+              <span class="truncate" style="color: #787878">
+                @{{ chatPartnerUserName(entry[1]) }}
+              </span>
               <span class="time-posted" style="float: right">
-                {{ getUserSignupTime(chatPartnerName(entry[1])) }}
+                {{ getUserSignupTime(chatPartnerUserName(entry[1])) }}
               </span>
             </v-list-item-title>
             <v-list-item-subtitle>
-              {{ getLastPartnerMessage(chatPartnerUserId(entry[1])) }}
+              {{ getLastPartnerMessage(chatPartnerUserName(entry[1])) }}
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
@@ -95,13 +114,13 @@ export default {
       'getProfile',
       'getMyContactList',
       'getUserSignupTime',
+      'getUnreadDirectMessageCountByChatPartnerUserName',
     ]),
   },
-  async created() {
+  created() {
     console.log('route', this.$route)
-    await this.fetchContactlist({ userId: this.$store.state.name.userId })
     this.getMyContactList.forEach((entry) => {
-      const userName = this.chatPartnerName(entry[1])
+      const userName = this.chatPartnerUserName(entry[1])
       this.fetchUserInfo({ userName })
     })
     console.log('this.getMyContactList :>> ', this.getMyContactList)
@@ -116,8 +135,7 @@ export default {
         this.$emit('chatpartnerselected', name)
       }
     },
-    chatPartnerName(contact) {
-      console.log('contact :>> ', contact)
+    chatPartnerUserName(contact) {
       if (
         contact.senderUserName.toLowerCase() ===
         this.$store.state.name.label.toLowerCase()

@@ -26,6 +26,8 @@
     <v-text-field
       v-if="nameExists"
       v-model="loginPin"
+      aria-autocomplete="off"
+      autocomplete="off"
       style="
         font-size: 1.6rem;
         font-weight: 700;

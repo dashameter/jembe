@@ -95,6 +95,7 @@ export default {
     { src: '~/plugins/timeago.js' },
     '~/plugins/directives.js',
     '~/plugins/filters.js',
+    { src: '~/plugins/persistedState.client.js' },
   ],
 
   // TODO enable plugin: { src: '~/plugins/localStorage.js', ssr: false }
@@ -149,6 +150,13 @@ export default {
       //     options: { fix: true }
       //   })
       // }
+      config.module.rules.push({
+        test: /\.(ogg|mp3|wav|mpe?g)$/i,
+        loader: 'file-loader',
+        options: {
+          name: '[path][name].[ext]',
+        },
+      })
       config.node = {
         fs: 'empty',
       }

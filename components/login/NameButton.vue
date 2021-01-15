@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default {
@@ -50,6 +50,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['getTempIdentityId']),
     deeplink() {
       return `http://evowallet.io/#/?name=${this.$store.state.name.label}`
     },
@@ -58,7 +59,7 @@ export default {
     ...mapActions(['registerNameOnceBalance', 'onboard']),
     async onboardMe() {
       this.isLoading = true
-      if (this.$store.state.identityId) {
+      if (this.getTempIdentityId) {
         await this.onboard()
         this.isLoading = false
       } else {

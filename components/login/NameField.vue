@@ -2,6 +2,8 @@
   <div>
     <v-text-field
       v-model="name"
+      aria-autocomplete="off"
+      autocomplete="off"
       class="mx-auto"
       style="
         font-size: 1.6rem;

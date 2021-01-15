@@ -97,7 +97,7 @@
           <v-row
             no-gutters
             class="pt-2 pb-2 pr-3"
-            style="justify-content: space-between; max-width: 425px"
+            style="justify-content: space-between; max-width: 490px"
             @click="showLoginNag()"
           >
             <div class="hoverblue ml-n2">
@@ -176,6 +176,35 @@
                 style="font-size: 14px"
               ></span>
             </div>
+            <div class="hoverblue ml-n1">
+              <v-menu>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    icon
+                    :disabled="!$store.getters.hasSession"
+                    v-bind="attrs"
+                    v-on="on"
+                    ><v-icon size="21px" class="mb-1"
+                      >mdi-export-variant</v-icon
+                    >
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item @click="bookmark(jam.$id)">
+                    <v-icon size="20px" class="mr-1">
+                      mdi-bookmark-outline
+                    </v-icon>
+                    <v-list-item-title size="12px">
+                      {{
+                        getiBookmarked(jam.$id)
+                          ? 'Remove Jam from Bookmarks'
+                          : 'Add Jam to Bookmarks'
+                      }}
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </div>
           </v-row>
         </v-col>
       </v-row>
@@ -230,7 +259,7 @@ export default {
       replyToJamText: '',
       replyToJamId: '',
       opUserId: '',
-      opUserName: '',
+      userName: '',
     }
   },
   computed: {
@@ -241,6 +270,7 @@ export default {
       'getLikesCount',
       'getCommentsCount',
       'getiFollow',
+      'getiBookmarked',
     ]),
     toThreadLink() {
       if (this.$store.getters.hasSession) {
@@ -275,7 +305,37 @@ export default {
       'sendDash',
       'sendJamAndRefreshJams',
       'fetchJamById',
+      'bookmarkJam',
+      'fetchBookmarks',
     ]),
+    async bookmark(jamId) {
+      const isBookmarked = !this.getiBookmarked(jamId)
+      // console.log('getiBookmarked', this.getiBookmarked(jamId))
+      console.log('{ jamId, isBookmarked } :>> ', { jamId, isBookmarked })
+      this.showSnackbar({
+        // text: `You are now following {jammerId}`,
+        text: this.getiBookmarked(jamId)
+          ? 'Removing Jam from your Bookmarks.'
+          : 'Adding Jam to your Bookmarks.',
+        color: '#989898',
+      })
+      await this.bookmarkJam({
+        jamId,
+        isBookmarked,
+        userName: this.$store.state.name.label,
+        opUserId: this.jam.userId,
+        opUserName: this.jam.userName,
+      })
+      this.showSnackbar({
+        // text: `You are now following {jammerId}`,
+        text: this.getiBookmarked(jamId)
+          ? 'Jam removed from your Bookmarks.'
+          : 'Jam added to your Bookmarks.',
+        color: '#008de4',
+        link: this.getiBookmarked(jamId) ? null : '/bookmarks',
+      })
+      await this.fetchBookmarks()
+    },
     posted(posttime) {
       const eventDate = new Date(posttime)
       const now = new Date(Date.now())
@@ -294,8 +354,6 @@ export default {
         'Dec',
       ]
 
-      // const sameMinutes = now.getMinutes() === eventDate.getMinutes()
-      // const sameHours = now.getHours() === eventDate.getHours()
       const sameDay = now.getDate() === eventDate.getDate()
       const sameMonth = now.getMonth() === eventDate.getMonth()
       const sameYear = now.getFullYear() === eventDate.getFullYear()
@@ -323,7 +381,6 @@ export default {
 
       // If rolling past midnight, display 'date'
       if (sameMonth && sameYear) {
-        // const day = now.getDate() - eventDate.getDate()  // to calculate the number of days ago
         return months[eventDate.getMonth()] + ' ' + eventDate.getDate() + ''
       }
 
@@ -414,6 +471,53 @@ export default {
 <style>
 .linkified {
   color: black !important;
+}
+
+span.emoji {
+  display: -moz-inline-box;
+  -moz-box-orient: vertical;
+  display: inline-block;
+  vertical-align: baseline;
+  *vertical-align: auto;
+  *zoom: 1;
+  *display: inline;
+  width: 1em;
+  height: 1em;
+  background-size: 1em;
+  background-repeat: no-repeat;
+  text-indent: -9999px;
+  background-position: 50%, 50%;
+  background-size: contain;
+}
+
+span.emoji-sizer {
+  line-height: 0.81em;
+  font-size: 1em;
+  margin: -2px 0;
+}
+
+span.emoji-outer {
+  display: -moz-inline-box;
+  display: inline-block;
+  *display: inline;
+  height: 1em;
+  width: 1em;
+}
+
+span.emoji-inner {
+  display: -moz-inline-box;
+  display: inline-block;
+  text-indent: -9999px;
+  width: 100%;
+  height: 100%;
+  vertical-align: baseline;
+  *vertical-align: auto;
+  *zoom: 1;
+}
+
+img.emoji {
+  width: 1em;
+  height: 1em;
 }
 </style>
 <style scoped>
@@ -571,5 +675,8 @@ export default {
   100% {
     transform: scale(1.25);
   }
+}
+.v-menu__content {
+  overflow: hidden;
 }
 </style>
