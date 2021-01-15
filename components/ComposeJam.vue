@@ -3,7 +3,7 @@
     <!-- <v-card class="pa-4 mx-auto" max-width="600" elevation="0" tile> -->
     <v-row no-gutters>
       <v-col style="max-width: 65px" class="pl-4 pt-2">
-        <v-avatar color="grey">
+        <v-avatar color="lightgray">
           <v-img
             :src="getProfile($store.state.name.label).avatar"
           ></v-img> </v-avatar

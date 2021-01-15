@@ -147,7 +147,28 @@
 
       <v-snackbar v-model="snackbar.show" :top="'top'" :color="snackbar.color">
         {{ snackbar.text }}
-        <v-btn dark absolute text right small @click="snackbar.show = false">
+        <v-btn
+          v-if="snackbar.link"
+          dark
+          absolute
+          text
+          right
+          small
+          style="padding-bottom: 6px"
+          @click="snackBarRouterPush()"
+        >
+          View
+        </v-btn>
+        <v-btn
+          v-else
+          dark
+          absolute
+          text
+          right
+          small
+          style="padding-bottom: 6px"
+          @click="snackbar.show = false"
+        >
           Close
         </v-btn>
       </v-snackbar>
@@ -169,7 +190,13 @@ export default {
     return {
       showComposeJamDialog: false,
       // focused: false,
-      snackbar: { show: false, color: 'red', text: '', timestamp: 0 },
+      snackbar: {
+        show: false,
+        color: 'red',
+        text: '',
+        timestamp: 0,
+        link: null,
+      },
       items: [
         {
           icon: 'mdi-home-outline',
@@ -226,11 +253,13 @@ export default {
     await this.initOrCreateAccount({})
     this.loopSyncSession() // TODO phaseb, launch this userId specific after name entry
     this.loopFetchNotifications()
+    this.loopFetchDirectMessages()
   },
   mounted() {},
   methods: {
     ...mapActions([
       // 'initWallet',
+      'fetchDirectMessages',
       'initOrCreateAccount',
       'syncSession',
       'resetStateKeepAccounts',
@@ -240,6 +269,17 @@ export default {
       'fetchNotifications',
       'saveLastSeen',
     ]),
+    snackBarRouterPush() {
+      this.$router.push(this.snackbar.link)
+      this.snackbar.show = false
+    },
+    async loopFetchDirectMessages() {
+      if (this.$store.getters.hasSession) await this.fetchDirectMessages()
+
+      await sleep(1000)
+
+      this.loopFetchDirectMessages()
+    },
     logout() {
       this.resetStateKeepAccounts()
       this.$router.push('/')
@@ -266,19 +306,12 @@ export default {
       this.loopFetchNotifications()
     },
     async loopSyncSession() {
-      console.log('loopSyncSession')
-      if (this.$store.state.identityId === null) {
+      if (!this.$store.getters.getTempIdentityId) {
         await sleep(1000)
         this.loopSyncSession()
         return
       }
-      // console.log('loopSyncSession()')
       await this.syncSession()
-
-      // console.log(
-      //   'Login state: state.session',
-      //   this.$store.state.session
-      // )
 
       // State change to LoggedIn
       if (this.$store.getters.hasSession && this.isIndexRoute) {

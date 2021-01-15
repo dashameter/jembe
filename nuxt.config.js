@@ -95,6 +95,7 @@ export default {
     { src: '~/plugins/timeago.js' },
     '~/plugins/directives.js',
     '~/plugins/filters.js',
+    { src: '~/plugins/persistedState.client.js' },
   ],
 
   // TODO enable plugin: { src: '~/plugins/localStorage.js', ssr: false }

@@ -1,19 +1,31 @@
 <template>
-  <v-col class="flex-nowrap" style="max-width: 920px">
-    <v-row>
-      <!-- middle column: compose jam and jam cards -->
-      <v-col class="flex-nowrap py-2" style="max-width: 600px">
-        <v-container class="pa-0 borders pt-0">
-          <v-row align="center" no-gutters class="pl-1 mt-n1 py-2">
-            <v-btn icon color="#008de4" @click="$router.go(-1)"
-              ><v-icon>mdi-arrow-left</v-icon></v-btn
-            >
-            <span class="font-header pl-2"> Bookmarks </span>
-          </v-row>
-          <v-divider />
-        </v-container>
-      </v-col>
+  <v-col
+    :class="{
+      fullscreen: $vuetify.breakpoint.mdAndUp,
+      halfscreen: $vuetify.breakpoint.smAndDown,
+    }"
+  >
+    <v-row no-gutters>
+      <v-col class="flex-nowrap fill-height borders" style="height: 100vh">
+        <v-row align="center" no-gutters class="py-2">
+          <v-btn icon color="#008de4" @click="$router.go(-1)"
+            ><v-icon>mdi-arrow-left</v-icon></v-btn
+          >
+          <span class="font-header pl-2"> Bookmarks </span>
+        </v-row>
+        <v-row class="handle pl-14 mt-n3 mb-2">
+          @{{ $store.state.name.label }}
+        </v-row>
+        <v-divider />
 
+        <div>
+          <TweetWrapper
+            v-for="(jam, i) in getBookmarkedJams"
+            :key="i"
+            :jam="jam"
+          />
+        </div>
+      </v-col>
       <v-col
         v-if="$vuetify.breakpoint.mdAndUp"
         class="pt-0"
@@ -24,3 +36,35 @@
     </v-row>
   </v-col>
 </template>
+
+<script>
+import { mapActions, mapGetters } from 'vuex'
+import TweetWrapper from '~/components/bookmarks/TweetWrapper'
+import searchBar from '~/components/searchBar'
+
+export default {
+  components: {
+    TweetWrapper,
+    searchBar,
+  },
+  data() {
+    return {}
+  },
+  computed: {
+    ...mapGetters(['getBookmarkedJams']),
+  },
+  async created() {
+    await this.fetchBookmarks()
+  },
+  methods: {
+    ...mapActions(['fetchBookmarks']),
+  },
+}
+</script>
+
+<style scoped>
+.handle {
+  color: #757575;
+  font-size: 13px;
+}
+</style>

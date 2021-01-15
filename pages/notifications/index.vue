@@ -70,14 +70,6 @@ export default {
     Like,
     Mention,
   },
-  // props: {
-  //   jam: {
-  //     type: Object,
-  //     default() {
-  //       return {}
-  //     },
-  //   },
-  // },
   data() {
     return {
       tabRefresh: 0,

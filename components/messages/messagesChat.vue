@@ -21,7 +21,7 @@
         icon
         color="#008de4"
         class="mt-n1"
-        @click="$router.go(-1)"
+        @click="$router.push('/messages')"
         ><v-icon>mdi-arrow-left</v-icon></v-btn
       >
       <span class="font-header pa-0 mt-n1">
@@ -51,6 +51,7 @@
     <v-divider />
     <div
       id="scrollcontainer"
+      class="mb-2"
       style="
         overflow-y: scroll;
         flex-shrink: 1;
@@ -59,6 +60,7 @@
       "
       :class="{
         messagesheight: $route.name === 'messages-userName',
+        overlayheight: $route.name === 'discover',
       }"
     >
       <div>
@@ -93,7 +95,7 @@
         </v-row>
       </div>
     </div>
-    <v-row no-gutters align="center" class="flex-nowrap messageinput py-2 mt-2">
+    <v-row no-gutters align="center" class="flex-nowrap messageinput py-2">
       <v-text-field
         v-model="directMessageText"
         :disabled="isSendingReplyMessage"
@@ -122,7 +124,7 @@ import linkify from 'vue-linkify'
 
 Vue.directive('linkified', linkify)
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+// const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default {
   props: {
@@ -131,15 +133,25 @@ export default {
   data() {
     return {
       isSendingReplyMessage: false,
-      messages: [],
       directMessageText: '',
       lastTimeCheckedReceived: 0,
       lastTimeCheckedSent: 0,
       chatPartnerUserId: '',
+      setLastSeenMsgInterval: undefined,
     }
   },
   computed: {
-    ...mapGetters(['getJams', 'getProfile', 'getDirectMessages']),
+    ...mapGetters([
+      'getJams',
+      'getProfile',
+      'getDirectMessages',
+      'getLastPartnerMessageTime',
+    ]),
+  },
+  watch: {
+    getLastPartnerMessageTime(chatPartnerUserName) {
+      console.log('chatPartnerUserName :>> ', chatPartnerUserName)
+    },
   },
   async created() {
     if (this.chatPartnerUserName) {
@@ -147,19 +159,24 @@ export default {
       this.chatPartnerUserId = (
         await this.resolveUsername(this.chatPartnerUserName)
       ).$id
-      this.fetchDirectMessagesLoop()
-      console.log(
-        'directmessages',
-        this.getDirectMessages(this.chatPartnerUserId)
-      )
     }
+    this.setLastSeenMsgInterval = setInterval(this.setLastSeenMsg, 2000)
+  },
+  beforeDestroy() {
+    clearInterval(this.setLastSeenMsgInterval)
   },
   methods: {
-    ...mapActions([
-      'fetchDirectMessages',
-      'resolveUsername',
-      'sendDirectMessage',
-    ]),
+    ...mapActions(['resolveUsername', 'sendDirectMessage']),
+    setLastSeenMsg() {
+      console.log(
+        'loopsetlastseenmessage this.chatPartnerUsername :>> ',
+        this.chatPartnerUserName
+      )
+      this.$store.commit('setLastSeenDirectMessage', {
+        chatPartnerUserName: this.chatPartnerUserName,
+        timestamp: this.getLastPartnerMessageTime(this.chatPartnerUserName),
+      })
+    },
     enterPress(event) {
       // TODO use text-area and add linebreaks to messages
       if (event.shiftKey === true) {
@@ -194,13 +211,6 @@ export default {
 
       // this.isSendingReplyMessage = false
     },
-    async fetchDirectMessagesLoop() {
-      await this.fetchDirectMessages()
-
-      await sleep(1000)
-
-      this.fetchDirectMessagesLoop()
-    },
   },
 }
 </script>
@@ -232,6 +242,9 @@ a.linkify :hover {
 }
 .messagesheight {
   height: 100%;
+}
+.overlayheight {
+  height: 250px;
 }
 .chatoverlay {
   max-height: 470px;
