@@ -93,7 +93,7 @@ const getInitState = () => {
       userId: process.env.NAME_USERID,
       isValid: false,
       uidPin: '',
-      identityId: process.env.NAME_IDENTITY_ID,
+      identityId: process.env.NAME_IDENTITY,
       userPubKey: '',
     }, // TODO replace with accounts, name -> user
     onboardText: 'Enter',

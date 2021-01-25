@@ -7,6 +7,8 @@
   "scripts": {
     "testnet": "./scripts/runTestnet.sh",
     "local": "./scripts/runLocal.sh",
+    "local:loggedin": "./run-logged-in-as-honeybadger.sh",
+    "register:testuser": "./scripts/registerTestUser.sh",
     "build-testnet": "./scripts/runBuildTestnet.sh",
     "start": "nuxt start",
     "generate": "nuxt generate",

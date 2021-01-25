@@ -4,6 +4,7 @@ source ~/.evoenv
 unset NUXT_DAPIADDRESSES
 unset NUXT_DPNS_CONTRACT_ID
 unset NUXT_LOCALNODE
+unset NUXT_JEMBE_STAY_LOGGED_IN
 
 export NUXT_ENV_RUN="testnet"
 
