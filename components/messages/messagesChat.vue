@@ -87,16 +87,33 @@
               max-width: 350px;
             "
           >
-            <div
-              v-linkified:options="{ className: 'linkify' }"
-              v-html="message.encMessage"
-            />
+            <div v-linkify="message.encMessage" />
           </v-card>
         </v-row>
       </div>
     </div>
     <v-row no-gutters align="center" class="flex-nowrap messageinput py-2">
+      <v-btn class="ml-3" icon @click="showEmojiPicker = !showEmojiPicker">
+        <v-icon color="#008de4">mdi-emoticon-happy-outline </v-icon>
+      </v-btn>
+      <Picker
+        v-if="showEmojiPicker"
+        v-click-outside="closeEmojiPicker"
+        color="#008de4"
+        set="twitter"
+        title="Pick your emoji"
+        emoji="point_up"
+        :style="{
+          position: 'fixed',
+          bottom: 0,
+          'margin-bottom': '56px',
+          background: 'white',
+          'z-index': 999999999,
+        }"
+        @select="addEmoji"
+      />
       <v-text-field
+        id="messageinput"
         v-model="directMessageText"
         aria-autocomplete="off"
         autocomplete="off"
@@ -108,7 +125,8 @@
         placeholder="Start a new message"
         hide-details=""
         @keydown.enter="enterPress"
-      /><v-btn
+      />
+      <v-btn
         :loading="isSendingReplyMessage"
         icon
         class="mr-1"
@@ -121,19 +139,25 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
-import Vue from 'vue'
-import linkify from 'vue-linkify'
-
-Vue.directive('linkified', linkify)
+import * as linkify from 'linkifyjs'
+import mention from 'linkifyjs/plugins/mention'
+import hashtag from 'linkifyjs/plugins/hashtag'
+import { Picker } from 'emoji-mart-vue'
 
 // const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+mention(linkify)
+hashtag(linkify)
 
 export default {
+  components: {
+    Picker,
+  },
   props: {
     chatPartnerUserName: { type: String, default: '' },
   },
   data() {
     return {
+      showEmojiPicker: false,
       isSendingReplyMessage: false,
       directMessageText: '',
       lastTimeCheckedReceived: 0,
@@ -169,6 +193,19 @@ export default {
   },
   methods: {
     ...mapActions(['resolveUsername', 'sendDirectMessage']),
+    closeEmojiPicker() {
+      this.showEmojiPicker = false
+    },
+    addEmoji(event) {
+      console.log('findingtest', this.directMessageText)
+      if (this.directMessageText.endsWith(' ')) {
+        this.directMessageText = this.directMessageText + event.colons + ' '
+      } else {
+        this.directMessageText =
+          this.directMessageText + ' ' + event.colons + ' '
+      }
+      document.getElementById('messageinput').focus()
+    },
     async setLastSeenMsg() {
       const prevTimestamp =
         this.$store.state.dappState.lastSeen[
@@ -196,6 +233,7 @@ export default {
         this.directMessageText = this.directMessageText + '\n\r'
       } else {
         this.sendDirectMessageWrapper()
+        this.closeEmojiPicker()
       }
     },
     amIMessageSender(message) {
@@ -212,8 +250,6 @@ export default {
       // Don't send an empty message
       if (directMessageText === '') return
 
-      // this.isSendingReplyMessage = true
-
       this.directMessageText = ''
 
       sendDirectMessage({
@@ -221,8 +257,6 @@ export default {
         chatPartnerUserId,
         chatPartnerUserName,
       })
-
-      // this.isSendingReplyMessage = false
     },
   },
 }
