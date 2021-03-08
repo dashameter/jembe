@@ -17,8 +17,8 @@ const encPvtKey =
 // Jembe temp session vars
 const sessionMnemonic =
   // 'essay love suffer inquiry buffalo advance glue boil arrive glove clutch oyster'
-  'bless fluid disagree depart trade donor uniform dust month side dad tray'
-// 'luggage vacuum solution element rigid have provide enough defense champion frog camera'
+  // 'bless fluid disagree depart trade donor uniform dust month side dad tray'
+  'luggage vacuum solution element rigid have provide enough defense champion frog camera'
 // 'catch fine embrace frequent prepare cruise relax faculty artwork yard sustain report'
 // 'neither neither apple collect warm trip luggage path tenant test liquid effort'
 
