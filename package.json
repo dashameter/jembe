@@ -26,7 +26,7 @@
     "@nuxtjs/axios": "^5.11.0",
     "@nuxtjs/dotenv": "^1.4.1",
     "@nuxtjs/pwa": "^3.0.0-beta.20",
-    "dash": "^3.17.0",
+    "dash": "^3.18.1",
     "dash-secure-message": "^1.1.0",
     "dashmachine-crypto": "^0.5.0",
     "emoji-js": "^3.5.0",
