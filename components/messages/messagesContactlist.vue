@@ -90,7 +90,9 @@
               </span>
             </v-list-item-title>
             <v-list-item-subtitle>
-              {{ getLastPartnerMessage(chatPartnerUserName(entry[1])) }}
+              <div
+                v-linkify="getLastPartnerMessage(chatPartnerUserName(entry[1]))"
+              />
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>
