@@ -116,6 +116,7 @@ const getInitState = () => {
       // lastTimeCheckedReceived: 0,
       // lastTimeCheckedSent: 0,
     },
+    reactions: {},
     contactList: {},
     notifications: [],
     jamsById: {},
@@ -126,6 +127,9 @@ const getInitState = () => {
 export const state = () => getInitState()
 
 export const getters = {
+  getReaction: (state) => (messageId) => {
+    return state.reactions[messageId] ? state.reactions[messageId] : ''
+  },
   getContactListNames(state) {
     const contactList = []
 
@@ -348,6 +352,9 @@ export const getters = {
 }
 
 export const mutations = {
+  setReactions(state, { messageId, reaction }) {
+    Vue.set(state.reactions, messageId, reaction)
+  },
   setLastSeenDirectMessage(state, { chatPartnerUserName, timestamp }) {
     Vue.set(state.dappState.lastSeen, chatPartnerUserName, timestamp)
   },
@@ -1043,6 +1050,171 @@ export const actions = {
     )
 
     commit('setDirectMessage', directMessage)
+  },
+  async encryptReaction(
+    { dispatch, state },
+    { messageId, reactEmoji, chatPartnerUserName, chatPartnerUserId }
+  ) {
+    const dpnsChatPartner = await dispatch(
+      'resolveUsername',
+      chatPartnerUserName
+    )
+    console.log('dpnsChatPartner :>> ', dpnsChatPartner)
+
+    const chatPartnerPubKeyDoc = await dispatch('queryDocuments', {
+      dappName: 'primitives',
+      typeLocator: 'Session',
+      queryOpts: {
+        limit: 1,
+        startAt: 1,
+        orderBy: [['$createdAt', 'desc']],
+        where: [
+          ['$ownerId', '==', dpnsChatPartner.records.dashUniqueIdentityId],
+        ],
+      },
+    })
+
+    const chatPartnerPubKey = chatPartnerPubKeyDoc[0].toJSON().pubKey
+
+    console.log('chatPartnerPubKey :>> ', chatPartnerPubKey)
+
+    // Retrieve receiver publickey of my main identity
+    const mainIdentityPubKey = state.session.pubKey
+
+    console.log('mainIdentityPubKey :>> ', mainIdentityPubKey)
+
+    // Retrieve sender private key for tmp identity
+    const acc = await client.wallet.getAccount({ index: 0 })
+
+    const senderPrivKey = acc
+      .getIdentityHDKeyByIndex(0, 0)
+      .privateKey.toString()
+
+    console.log('senderPrivKey :>> ', senderPrivKey)
+
+    // Retrieve sender public key for tmp identity
+    const senderPubKey = acc
+      .getIdentityHDKeyByIndex(0, 0)
+      .privateKey.publicKey.toBuffer()
+      .toString('base64')
+
+    console.log('senderPubKey :>> ', senderPubKey)
+
+    const msg = dsm.encrypt(
+      senderPrivKey,
+      reactEmoji,
+      [chatPartnerPubKey, mainIdentityPubKey],
+      {}
+    )
+    // .toString('base64')
+
+    console.log('msg :>> ', msg)
+
+    const encMessageObj = { senderPubKey, msg }
+    console.log('encMessageObj :>> ', encMessageObj)
+
+    const encMessage = Buffer.from(JSON.stringify(encMessageObj)).toString(
+      'base64'
+    )
+
+    console.log('encMessage :>> ', encMessage)
+
+    dispatch('submitDocument', {
+      contract: 'directmessage',
+      type: 'reaction',
+      doc: {
+        messageId,
+        emoji: encMessage,
+        chatPartnerUserId,
+      },
+    })
+  },
+  async fetchReactions(
+    { commit, dispatch, getters, state },
+    { chatPartnerUserId, chatPartnerUserName, messageId }
+  ) {
+    const chatPartnerReactions = await dispatch('queryDocuments', {
+      dappName: 'directmessage',
+      typeLocator: 'reaction',
+      queryOpts: {
+        limit: 1,
+        startAt: 1,
+        orderBy: [['$createdAt', 'desc']],
+        where: [
+          [
+            '$createdAt',
+            '>',
+            getters.getLastSeen('reaction-' + chatPartnerUserName),
+          ],
+          ['chatPartnerUserId', '==', chatPartnerUserId],
+          ['messageId', '==', messageId],
+        ],
+      },
+    })
+
+    const myReactions = await dispatch('queryDocuments', {
+      dappName: 'directmessage',
+      typeLocator: 'reaction',
+      queryOpts: {
+        limit: 1,
+        startAt: 1,
+        orderBy: [['$createdAt', 'desc']],
+        where: [
+          [
+            '$createdAt',
+            '>',
+            getters.getLastSeen('reaction-' + state.name.label),
+          ],
+          ['chatPartnerUserId', '==', state.name.userId],
+          ['messageId', '==', messageId],
+        ],
+      },
+    })
+
+    const reactions = [...myReactions, ...chatPartnerReactions]
+
+    const decryptedReactions = []
+    reactions.forEach((element) => {
+      const decryptedMessage = { ...element.toJSON() }
+
+      const encMessage = JSON.parse(Buffer.from(element.data.emoji, 'base64'))
+
+      decryptedMessage.emoji = dsm.decrypt(
+        state.session.pvtKey,
+        encMessage.msg.map((x) => x[1]),
+        encMessage.senderPubKey,
+        {}
+      )[0][1]
+
+      decryptedReactions.push(decryptedMessage)
+    })
+
+    decryptedReactions.forEach((reaction) => {
+      commit('setReactions', {
+        messageId: reaction.messageId,
+        reaction: reaction.emoji,
+      })
+    })
+
+    const newTimestampChatPartnerReactions =
+      chatPartnerReactions.length > 0
+        ? chatPartnerReactions[0].toJSON().$createdAt
+        : 0
+
+    const newTimestampMyReactions =
+      myReactions.length > 0 ? myReactions[0].toJSON().$createdAt : 0
+
+    commit('setLastSeen', {
+      eventType: 'reactions-' + this.chatPartnerUserName,
+      lastSeenTimestamp: newTimestampChatPartnerReactions,
+    })
+
+    commit('setLastSeen', {
+      eventType: 'reactions-' + state.name.label,
+      lastSeenTimestamp: newTimestampMyReactions,
+    })
+
+    return decryptedReactions
   },
   async sendDirectMessage(
     { commit, dispatch, state },
