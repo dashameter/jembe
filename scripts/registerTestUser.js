@@ -24,7 +24,6 @@ const sessionMnemonic =
 
 // mn-bootstrap instance
 const dapiAddresses = ['127.0.0.1:3000']
-
 //
 // End Config
 //

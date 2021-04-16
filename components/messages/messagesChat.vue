@@ -65,30 +65,88 @@
     >
       <div>
         <v-row
-          v-for="(message, idx) in getDirectMessages(chatPartnerUserId)"
-          :key="idx"
+          v-for="message in getDirectMessages(chatPartnerUserId)"
+          :key="message.$id"
           no-gutters
           :justify="amIMessageSender(message) ? 'end' : 'start'"
         >
-          <v-card
-            class="mt-1 px-4 py-2 mr-4 ml-4"
-            :class="{
-              chatPartnerBubble: !amIMessageSender(message),
-              meBubble: amIMessageSender(message),
-            }"
-            elevation="0"
-            outlined
-            color="lightgrey"
-            style="
-              line-height: 1.2em;
-              font-size: 16px;
-              display: flex !important;
-              flex-direction: column;
-              max-width: 350px;
-            "
-          >
-            <div v-linkify="message.encMessage" />
-          </v-card>
+          <div>
+            <div>
+              <div style="display: flex; flex-wrap: nowrap">
+                <v-card
+                  class="mt-1 px-4 py-2 mr-4 ml-4"
+                  :class="{
+                    chatPartnerBubble: !amIMessageSender(message),
+                    meBubble: amIMessageSender(message),
+                  }"
+                  elevation="0"
+                  outlined
+                  color="lightgrey"
+                  style="
+                    line-height: 1.2em;
+                    font-size: 16px;
+                    display: flex !important;
+                    flex-direction: column;
+                    max-width: 350px;
+                  "
+                >
+                  <div v-linkify="message.encMessage" />
+                </v-card>
+                <v-btn
+                  v-if="!amIMessageSender(message)"
+                  icon
+                  style="margin-top: 3px"
+                  @click="reactionPicker(message.$id)"
+                  ><v-icon>mdi-heart-plus-outline</v-icon></v-btn
+                >
+                <div>
+                  <Picker
+                    v-if="showReactionPicker[message.$id] === true"
+                    color="#008de4"
+                    set="twitter"
+                    title=""
+                    :i18n="{
+                      categories: { recent: '' },
+                    }"
+                    :style="{
+                      height: '60px',
+                      width: '290px',
+                      'overflow-y': 'hidden',
+                      'overflow-x': 'hidden',
+                      'margin-left': '12px',
+                      'padding-left': '6px',
+                      'padding-right': '0px',
+                      'margin-right': '12px',
+                      display: 'flex',
+                      position: 'relative',
+                      background: 'white',
+                      'z-index': 999999999,
+                    }"
+                    :tooltip="true"
+                    :show-preview="false"
+                    :show-search="false"
+                    :show-categories="false"
+                    :show-skin-tones="false"
+                    :include="['recent']"
+                    :recent="[
+                      ':astonished:',
+                      ':joy:',
+                      ':cry:',
+                      ':hearts:',
+                      ':fire:',
+                      ':thumbsup:',
+                      ':thumbsdown:',
+                    ]"
+                    @select="addReaction($event, message.$id)"
+                  />
+                </div>
+              </div>
+              <div
+                v-linkify="getReaction(message.$id)"
+                style="margin-left: 16px; font-size: 19px"
+              />
+            </div>
+          </div>
         </v-row>
       </div>
     </div>
@@ -113,7 +171,6 @@
         @select="addEmoji"
       />
       <v-text-field
-        id="messageinput"
         v-model="directMessageText"
         aria-autocomplete="off"
         autocomplete="off"
@@ -139,12 +196,14 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+// import Vue from 'vue'
 import * as linkify from 'linkifyjs'
 import mention from 'linkifyjs/plugins/mention'
 import hashtag from 'linkifyjs/plugins/hashtag'
 import { Picker } from 'emoji-mart-vue'
 
-// const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 mention(linkify)
 hashtag(linkify)
 
@@ -157,13 +216,16 @@ export default {
   },
   data() {
     return {
+      exitfetchReactions: false,
       showEmojiPicker: false,
+      showReactionPicker: {},
       isSendingReplyMessage: false,
       directMessageText: '',
       lastTimeCheckedReceived: 0,
       lastTimeCheckedSent: 0,
       chatPartnerUserId: '',
       setLastSeenMsgInterval: undefined,
+      reactEmoji: '',
     }
   },
   computed: {
@@ -172,6 +234,7 @@ export default {
       'getProfile',
       'getDirectMessages',
       'getLastPartnerMessageTime',
+      'getReaction',
     ]),
   },
   watch: {
@@ -187,24 +250,76 @@ export default {
       ).$id
     }
     this.setLastSeenMsgInterval = setInterval(this.setLastSeenMsg, 2000)
+
+    this.exitfetchReactions = true
+    this.loopFetchReactions()
   },
   beforeDestroy() {
     clearInterval(this.setLastSeenMsgInterval)
   },
+  destroyed() {
+    this.exitfetchReactions = false
+  },
   methods: {
-    ...mapActions(['resolveUsername', 'sendDirectMessage']),
+    ...mapActions([
+      'resolveUsername',
+      'sendDirectMessage',
+      'submitDocument',
+      'fetchReactions',
+      'encryptReaction',
+    ]),
+    async loopFetchReactions() {
+      console.log(
+        'cp',
+        this.chatPartnerUserName,
+        this.getDirectMessages(this.chatPartnerUserId).length
+      )
+      // stop loop if user navigates to a different chatuser conversation or page
+      if (this.exitfetchReactions === false) {
+        return
+      }
+      if (this.getDirectMessages(this.chatPartnerUserId).length > 0) {
+        console.log('cploop')
+        for (
+          let idx = 0;
+          idx < this.getDirectMessages(this.chatPartnerUserId).length;
+          idx++
+        ) {
+          await this.fetchReactions({
+            chatPartnerUserId: this.chatPartnerUserId,
+            chatPartnerUserName: this.chatPartnerUserName,
+            messageId: this.getDirectMessages(this.chatPartnerUserId)[idx].$id,
+          })
+        }
+      }
+      await sleep(10000)
+      this.loopFetchReactions()
+    },
     closeEmojiPicker() {
       this.showEmojiPicker = false
     },
+    reactionPicker(messageId) {
+      console.log('reactpicker', this.showReactionPicker[messageId])
+      this.showReactionPicker[messageId] = !this.showReactionPicker[messageId]
+    },
+    closeReactionPicker(messageId) {
+      this.showReactionPicker[messageId] = false
+    },
     addEmoji(event) {
-      console.log('findingtest', this.directMessageText)
-      if (this.directMessageText.endsWith(' ')) {
-        this.directMessageText = this.directMessageText + event.colons + ' '
-      } else {
-        this.directMessageText =
-          this.directMessageText + ' ' + event.colons + ' '
-      }
-      document.getElementById('messageinput').focus()
+      this.directMessageText = this.directMessageText + event.colons
+    },
+    addReaction(event, messageId) {
+      this.reactEmoji = event.colons
+      console.log('reactm', this.reactEmoji, messageId)
+
+      this.encryptReaction({
+        messageId,
+        reactEmoji: this.reactEmoji,
+        chatPartnerUserName: this.chatPartnerUserName,
+        chatPartnerUserId: this.chatPartnerUserId,
+      })
+
+      this.closeReactionPicker(messageId)
     },
     async setLastSeenMsg() {
       const prevTimestamp =
