@@ -18,7 +18,14 @@
               @click="$router.push({ path: '../discover' })"
               ><v-icon>mdi-arrow-left</v-icon></v-btn
             >
-            <span class="font-header pl-3"> {{ jamUser }} </span>
+            <span class="font-header pl-3">
+              {{
+                getProfile(jamUser).displayName
+                  ? getProfile(jamUser).displayName
+                  : jamUser
+              }}
+            </span>
+            <span class="font-username pl-3"> @{{ jamUser }} </span>
           </v-row>
           <v-card flat tile class="my-2">
             <!-- <v-img :src="require('~/assets/avataaar.png')" height="194"></v-img> -->
@@ -31,10 +38,18 @@
               <v-img :src="getProfile(jamUser).avatar" alt="" />
             </v-avatar>
             <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title class="headline"
-                  >{{ jamUser
-                  }}<v-btn
+              <v-list-item-content class="py-0">
+                <v-list-item-title>
+                  <span class="font-header">
+                    {{
+                      getProfile(jamUser).displayName
+                        ? getProfile(jamUser).displayName
+                        : jamUser
+                    }}
+                  </span>
+                  <br />
+                  <span class="font-username">@{{ jamUser }}</span>
+                  <v-btn
                     v-if="
                       jamUser.toLowerCase() ===
                       $store.state.name.label.toLowerCase()
@@ -60,7 +75,7 @@
                     dense
                     outlined
                     rounded
-                    class="mt-n3 lowercase"
+                    class="mt-n5 lowercase"
                     font-weight="bold"
                     style="color: #008de4"
                     :disabled="!$store.getters.hasSession"

@@ -80,7 +80,12 @@
           >
             <v-list-item-title>
               <span style="font-weight: bold" class="truncate">
-                {{ chatPartnerUserName(entry[1]) }}
+                {{
+                  getProfile(chatPartnerUserName(entry[1])).displayName.length >
+                  0
+                    ? getProfile(chatPartnerUserName(entry[1])).displayName
+                    : chatPartnerUserName(entry[1])
+                }}
               </span>
               <span class="truncate" style="color: #787878">
                 @{{ chatPartnerUserName(entry[1]) }}

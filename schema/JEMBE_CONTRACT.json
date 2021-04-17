@@ -309,9 +309,16 @@
             "userNormalizedLabel": "asc"
           }
         ]
+      },
+      {
+        "properties": [
+          {
+            "displayName": "asc"
+          }
+        ]
       }
     ],
-    "required": ["userNormalizedLabel", "userId", "$updatedAt", "$createdAt"],
+    "required": ["userNormalizedLabel", "userId", "$updatedAt", "$createdAt", "displayName"],
     "properties": {
       "theme": {
         "type": "string"
@@ -331,6 +338,12 @@
       "userNormalizedLabel": {
         "type": "string",
         "maxLength": 1024,
+        "minLength": 0
+      },
+      "displayName": {
+        "type": "string",
+        "pattern": "^$|^[1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ]+$",
+        "maxLength": 20,
         "minLength": 0
       }
     },

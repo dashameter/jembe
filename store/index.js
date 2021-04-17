@@ -308,6 +308,7 @@ export const getters = {
     profile.avatar = storedProfile.avatar || require('~/assets/avataaar.png')
     profile.theme = storedProfile.theme || require('~/assets/theme.png')
     profile.statusMessage = storedProfile.statusMessage || ''
+    profile.displayName = storedProfile.displayName || ''
 
     profile.avatarRaw = storedProfile.avatarRaw || ''
     profile.themeRaw = storedProfile.themeRaw || ''

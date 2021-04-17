@@ -53,7 +53,13 @@
           >
             <span>
               <nuxt-link :to="'/' + jam.userName" class="jam-name"
-                ><span id="username" class="username"> {{ jam.userName }}</span>
+                ><span id="username" class="username">
+                  {{
+                    getProfile(jam.userName).displayName
+                      ? getProfile(jam.userName).displayName
+                      : jam.userName
+                  }}</span
+                >
                 <span class="handle"> @{{ jam.userName }} · </span>
               </nuxt-link>
               <span class="time-posted"
