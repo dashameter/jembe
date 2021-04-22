@@ -8,7 +8,7 @@
             <Desktop />
             <v-divider />
             <v-card flat color="#ffffff" class="my-2 mx-auto" max-width="600">
-              <v-card-title> Recent Tweets </v-card-title>
+              <v-card-title> Recent Jams </v-card-title>
             </v-card>
             <v-divider />
             <div v-if="!isFetchJamsFinished">
