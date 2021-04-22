@@ -20,7 +20,11 @@
               <v-list-item-content class="py-2 pl-3">
                 <v-list-item-title>
                   <span style="font-weight: bold; font-size: 19px">
-                    {{ chatPartnerUserName }}
+                    {{
+                      getProfile(chatPartnerUserName).displayName.length > 0
+                        ? getProfile(chatPartnerUserName).displayName
+                        : chatPartnerUserName
+                    }}
                   </span>
                 </v-list-item-title>
                 <v-list-item-subtitle
