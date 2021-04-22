@@ -366,6 +366,12 @@ export default {
   font-weight: bold;
   font-family: 'Montserrat';
 }
+.font-username {
+  color: rgba(20, 23, 26, 0.8) !important;
+  font-size: 16px;
+  font-weight: 500px;
+  font-family: 'Montserrat';
+}
 .menu-text {
   color: rgba(20, 23, 26, 0.8) !important;
 }

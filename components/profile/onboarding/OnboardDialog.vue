@@ -51,9 +51,10 @@
         </v-card-title>
         <v-card-subtitle class="pt-4" v-text="steps[step].subtitle" />
         <v-card-text class="text-center mt-14">
-          <AvatarPicker v-if="step === 0" @nextStep="step += 1" />
-          <ThemePicker v-if="step === 1" @nextStep="step += 1" />
-          <BioForm v-if="step === 2" @nextStep="$emit('close')" />
+          <DisplayName v-if="step === 0" @nextStep="step += 1" />
+          <AvatarPicker v-if="step === 1" @nextStep="step += 1" />
+          <ThemePicker v-if="step === 2" @nextStep="step += 1" />
+          <BioForm v-if="step === 3" @nextStep="$emit('close')" />
         </v-card-text>
         <!-- <ComposeJam :reply-to-jam-id="replyToJamId" @success="close()" /> -->
       </v-card>
@@ -65,10 +66,11 @@
 import AvatarPicker from '~/components/profile/onboarding/AvatarPicker'
 import ThemePicker from '~/components/profile/onboarding/ThemePicker'
 import BioForm from '~/components/profile/onboarding/BioForm'
+import DisplayName from '~/components/profile/onboarding/DisplayName'
 
 export default {
   name: 'OnboardDialog',
-  components: { AvatarPicker, ThemePicker, BioForm },
+  components: { AvatarPicker, ThemePicker, BioForm, DisplayName },
   props: {
     dialog: { type: Boolean, default: false },
     // replyToJamId: String,
@@ -79,6 +81,11 @@ export default {
     return {
       step: 0,
       steps: [
+        {
+          title: 'Choose your Jembe display name',
+          subtitle:
+            'Choose the name you want to display along with your username',
+        },
         {
           title: 'Pick a profile picture',
           subtitle:

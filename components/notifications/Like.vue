@@ -17,8 +17,6 @@
         </v-btn></v-col
       >
       <v-col>
-        <!-- {{ $route.params.username }} -->
-        <!-- need name and avatar correlated to jam that was liked - from dash platform -->
         <nuxt-link :to="'/' + like.userName">
           <v-avatar color="lightgray" size="30">
             <v-img
@@ -26,10 +24,9 @@
               :src="getProfile(like.userName).avatar"
             ></v-img> </v-avatar
         ></nuxt-link>
-        <!-- <v-btn icon><v-icon large color="brown">mdi-dog</v-icon></v-btn> -->
         <div>
-          <span style="font-weight: bold">{{ like.userName }} </span>liked your
-          Jam
+          <span style="font-weight: bold"> @{{ like.userName }} </span>liked
+          your Jam
         </div>
         <span v-html="linkifyMe(opText)" />
         <v-skeleton-loader

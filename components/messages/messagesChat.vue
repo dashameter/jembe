@@ -36,7 +36,11 @@
           <v-list-item-content class="py-2">
             <v-list-item-title>
               <span style="font-weight: bold; font-size: 19px">
-                {{ chatPartnerUserName }}
+                {{
+                  getProfile(chatPartnerUserName).displayName.length > 0
+                    ? getProfile(chatPartnerUserName).displayName
+                    : chatPartnerUserName
+                }}
               </span>
             </v-list-item-title>
             <v-list-item-subtitle
@@ -259,6 +263,7 @@ export default {
   },
   destroyed() {
     this.exitfetchReactions = false
+    console.log('cp destroyed', this.chatPartnerUserName)
   },
   methods: {
     ...mapActions([
@@ -269,17 +274,11 @@ export default {
       'encryptReaction',
     ]),
     async loopFetchReactions() {
-      console.log(
-        'cp',
-        this.chatPartnerUserName,
-        this.getDirectMessages(this.chatPartnerUserId).length
-      )
       // stop loop if user navigates to a different chatuser conversation or page
       if (this.exitfetchReactions === false) {
         return
       }
       if (this.getDirectMessages(this.chatPartnerUserId).length > 0) {
-        console.log('cploop')
         for (
           let idx = 0;
           idx < this.getDirectMessages(this.chatPartnerUserId).length;

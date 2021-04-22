@@ -7,7 +7,6 @@
     style="background-color: inherit !important"
     @click="goTo(toThreadLink, $event)"
   >
-    <!-- {{ jam }} -->
     <v-row no-gutters>
       <v-col
         style="max-width: 50px; max-height=88px; margin-top: -2px;"
@@ -23,8 +22,6 @@
         ></nuxt-link>
       </v-col>
       <v-col>
-        <!-- {{ $route.params.username }} -->
-        <!-- need name and avatar correlated to jam that was liked - from dash platform -->
         <nuxt-link :to="'/' + jam.userName">
           <v-avatar color="lightgray" size="30">
             <v-img
@@ -32,9 +29,8 @@
               :src="getProfile(jam.userName).avatar"
             ></v-img> </v-avatar
         ></nuxt-link>
-        <!-- <v-btn icon><v-icon large color="brown">mdi-dog</v-icon></v-btn> -->
         <div>
-          <span style="font-weight: bold">{{ jam.userName }} </span>rejammed
+          <span style="font-weight: bold"> @{{ jam.userName }} </span>rejammed
           your Jam
         </div>
         <!-- <span v-linkify="linkifyMe(opText)" /> -->
@@ -45,7 +41,6 @@
           type="list-item-two-line"
         ></v-skeleton-loader>
         <!-- displayJamText(notification.id).text -->
-        <!-- need jam.text from correlated jam - pull from dash platform -->
       </v-col>
     </v-row>
   </v-card>
