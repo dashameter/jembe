@@ -2778,7 +2778,7 @@ export const actions = {
       passFakeAssetLockProofForTests: process.env.LOCALNODE,
       dapiAddresses: process.env.DAPIADDRESSES,
       unsafeOptions: {
-        skipSynchronizationBeforeHeight: 415000, // only sync from start of 2021
+        skipSynchronizationBeforeHeight: 490143, // only sync from start of 2021
       },
       wallet: { mnemonic: state.mnemonic },
       apps: {
