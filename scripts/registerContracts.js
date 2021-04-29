@@ -12,7 +12,9 @@ let clientOpts = {
     // privateKey: 'currently throws a signing error'
     mnemonic: process.env.NUXT_MNEMONIC,
   },
-
+  unsafeOptions: {
+    skipSynchronizationBeforeHeight: 415000, // only sync from start of 2021
+  },
   dapiAddresses: process.env.NUXT_DAPIADDRESSES
     ? JSON.parse(process.env.NUXT_DAPIADDRESSES)
     : undefined,
