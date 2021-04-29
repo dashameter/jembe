@@ -158,7 +158,7 @@ export const getters = {
     return unreadCount
   },
   getTempIdentityId() {
-    return client.account.identities.getidentityids()[0]
+    return client.account.identities.getIdentityIds()[0]
   },
   getValidSessionIdentity: (state) => (doc) => {
     console.log('validsession :>> ', doc)
@@ -1144,7 +1144,7 @@ export const actions = {
       const createDocuments = []
 
       const identity = await client.platform.identities.get(
-        client.account.identities.getidentityids()[0]
+        client.account.identities.getIdentityIds()[0]
       )
 
       // TODO documents.create is slow causing lag in chat UX (appendDirectMessageSending)
@@ -1537,7 +1537,7 @@ export const actions = {
     { jamText, replyToJamId = '', reJamId = '', opUserId = '', opUserName = '' }
   ) {
     const identity = await client.platform.identities.get(
-      client.account.identities.getidentityids()[0]
+      client.account.identities.getIdentityIds()[0]
     )
 
     const tags = linkify
@@ -2380,7 +2380,7 @@ export const actions = {
 
     try {
       const identity = await platform.identities.get(
-        client.account.identities.getidentityids()[0]
+        client.account.identities.getIdentityIds()[0]
       )
 
       const docPromises = docs.map((doc) =>
@@ -2542,7 +2542,7 @@ export const actions = {
     const { platform } = client
 
     try {
-      const identityId = client.account.identities.getidentityids()[0]
+      const identityId = client.account.identities.getIdentityIds()[0]
       // const { identityId } = state
       console.log({ identityId })
       const identity = await platform.identities.get(identityId)
@@ -2583,7 +2583,7 @@ export const actions = {
   //   return publicKey
   // },
   async syncSession({ dispatch, state, commit, getters }) {
-    const identityId = client.account.identities.getidentityids()[0]
+    const identityId = client.account.identities.getIdentityIds()[0]
     console.log('identityId :>> ', identityId)
 
     // Can't sync before we create or recover an identityId
@@ -2709,7 +2709,7 @@ export const actions = {
     const confirmedBalance = client.account.getConfirmedBalance()
     console.log('Confirmed Balance: ' + confirmedBalance)
     if (confirmedBalance > 500000) {
-      if (!client.account.identities.getidentityids()[0]) {
+      if (!client.account.identities.getIdentityIds()[0]) {
         dispatch('registerIdentity')
       } else {
         console.log(
@@ -2732,12 +2732,12 @@ export const actions = {
       }
 
       // TODO need to check if identity belongs to mnemonic
-      if (!client.account.identities.getidentityids()[0]) {
+      if (!client.account.identities.getIdentityIds()[0]) {
         dispatch('registerIdentityOnceBalance')
       } else {
         console.log(
           'Found existing identityId',
-          client.account.identities.getidentityids()[0]
+          client.account.identities.getIdentityIds()[0]
         )
       }
     }
@@ -2822,8 +2822,8 @@ export const actions = {
     console.log('client.account :>> ', client.account)
     console.log('client.wallet.mnemonic :>> ', client.wallet.mnemonic)
     console.log(
-      'client.account.identities.getidentityids()[0] :>> ',
-      client.account.identities.getidentityids()[0]
+      'client.account.identities.getIdentityIds()[0] :>> ',
+      client.account.identities.getIdentityIds()[0]
     )
     const tmpPrivKey = client.account
       .getIdentityHDKeyByIndex(0, 0)
@@ -2835,8 +2835,8 @@ export const actions = {
 
     console.log('tmpPrivKey, tmpPubKey :>> ', tmpPrivKey, tmpPubKey)
     console.log(
-      'account.identities.getidentityids(); :>> ',
-      client.account.identities.getidentityids()
+      'account.identities.getIdentityIds(); :>> ',
+      client.account.identities.getIdentityIds()
     )
 
     commit('setTmpPrivKey', tmpPrivKey)
@@ -2896,8 +2896,8 @@ export const actions = {
       const identity = await client.platform.identities.register()
       console.log({ identity })
       console.log(
-        'account.identities.getidentityids(); :>> ',
-        client.account.identities.getidentityids()
+        'account.identities.getIdentityIds(); :>> ',
+        client.account.identities.getIdentityIds()
       )
       // commit('setIdentity', identity.id) // DEPRECATED
       commit('setLoadingStep', 2)
