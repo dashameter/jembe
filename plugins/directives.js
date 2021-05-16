@@ -9,7 +9,7 @@ emoji.img_set = 'twitter'
 emoji.replace_mode = 'css'
 
 Vue.directive('linkify', {
-  update: (el, binding) => {
+  bind: (el, binding) => {
     const linkified = linkifyStr(binding.value, {
       //   defaultProtocol: 'https', // TODO production enable https
       target: {

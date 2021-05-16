@@ -11,11 +11,10 @@
           <v-card-text class="mb-n7">
             <Headline />
             <Subline class="headline" />
-            <NameAutocomplete />
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <NameButton />
+            <LoginButton />
             <v-spacer></v-spacer>
           </v-card-actions>
         </v-card>
@@ -25,12 +24,11 @@
 </template>
 
 <script>
-import NameAutocomplete from './NameAutocomplete'
-import NameButton from './NameButton'
+import LoginButton from './LoginButton'
 import Headline from './Headline'
 import Subline from './Subline'
 
 export default {
-  components: { NameAutocomplete, NameButton, Headline, Subline },
+  components: { LoginButton, Headline, Subline },
 }
 </script>

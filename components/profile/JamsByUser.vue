@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Tweet v-for="(jam, i) in getJams($route.path)" :key="i" :jam="jam" />
+    <Jam v-for="(jam, i) in getJams($route.path)" :key="i" :jam="jam" />
     <div v-if="isLoadingJams" class="mt-8 text-center">
       <v-progress-circular color="#008de4" size="22" width="3" indeterminate />
     </div>
@@ -9,10 +9,10 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 
 export default {
-  components: { Tweet },
+  components: { Jam },
   data() {
     return { userName: '', isLoadingJams: true }
   },

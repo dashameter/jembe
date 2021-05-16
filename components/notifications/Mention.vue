@@ -1,14 +1,14 @@
 <template>
-  <Tweet v-if="jam" :jam="jam" />
+  <Jam v-if="jam" :jam="jam" />
 </template>
 
 <script>
 import { mapActions } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 
 export default {
   components: {
-    Tweet,
+    Jam,
   },
   props: {
     mention: {

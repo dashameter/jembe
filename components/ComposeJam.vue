@@ -4,9 +4,7 @@
     <v-row no-gutters>
       <v-col style="max-width: 65px" class="pl-4 pt-2">
         <v-avatar color="lightgray">
-          <v-img
-            :src="getProfile($store.state.name.label).avatar"
-          ></v-img> </v-avatar
+          <v-img :src="getProfile(myUserName).avatar"></v-img> </v-avatar
       ></v-col>
       <v-col class="px-0">
         <Mentionable
@@ -123,7 +121,7 @@ export default {
       },
     }
   },
-  computed: { ...mapGetters(['getProfile']) },
+  computed: { ...mapGetters(['getProfile', 'myUserName']) },
   methods: {
     ...mapActions(['sendJamAndRefreshJams', 'searchDashNames']),
     closeEmojiPicker() {
@@ -153,11 +151,11 @@ export default {
       })
       this.isLoading = false
       this.jamText = ''
-      this.validateText()
+      this.validateText() // reset ui elements
       this.$emit('success')
     },
 
-    validateText(event) {
+    validateText() {
       //   console.log({ event })
       //   console.log(event.srcElement.textLength)
 
@@ -169,7 +167,7 @@ export default {
 
       textValid.value = (amountChars / allowedChars) * 100
 
-      console.log({ remainingChars })
+      // console.log({ remainingChars })
       if (remainingChars >= 20) {
         this.textValid.color = 'primary'
         this.textValid.number = ''
@@ -183,11 +181,9 @@ export default {
         this.textValid.backgroundcolor = '#ff000033'
         this.textValid.number = remainingChars
         this.textValid.isValid = false
-        console.log('should be true', this.textValid.isValid)
       } else {
         this.textValid.isValid = true
         this.textValid.backgroundcolor = 'white'
-        console.log('should be false', this.textValid.isValid)
       }
 
       // Hide circle if text is 3 chars long (incl sign)

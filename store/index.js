@@ -1,4 +1,5 @@
 import Dash from 'dash'
+import DashDappConnect from 'dash-dapp-connect'
 import Vue from 'vue'
 // eslint-disable-next-line no-unused-vars
 import { decrypt, encrypt } from 'dashmachine-crypto'
@@ -70,10 +71,13 @@ let client
 let clientTimeout
 let registerIdentityInterval
 
+const Connect = new DashDappConnect()
+
 // mnemonic: "come sight trade detect travel hazard suit rescue special clip choose crouch"
 const getInitState = () => {
   console.log('getinitstate')
   return {
+    accountDPNS: {},
     loadingSteps: [
       '1/3 Requesting Dash from faucet',
       '2/3 Creating delegate identity',
@@ -127,6 +131,14 @@ const getInitState = () => {
 export const state = () => getInitState()
 
 export const getters = {
+  myUserName(state) {
+    return state.accountDPNS.label
+  },
+  getUserName: (state) => (ownerId) => {
+    return state.dpns[ownerId]
+      ? state.dpns[ownerId].label
+      : ownerId.substr(0, 6)
+  },
   getReaction: (state) => (messageId) => {
     return state.reactions[messageId] ? state.reactions[messageId] : ''
   },
@@ -302,7 +314,11 @@ export const getters = {
     return signup ? signup.humanTime : '?'
   },
   getProfile: (state) => (userName) => {
-    const storedProfile = state.users[userName.toLowerCase()] || {}
+    let storedProfile = {}
+
+    // username is initially undefined and fetched async
+    // username exists, profile exists, else empty object
+    if (userName) storedProfile = state.users[userName.toLowerCase()] || {}
 
     const profile = {}
     profile.avatar = storedProfile.avatar || require('~/assets/avataaar.png')
@@ -355,6 +371,9 @@ export const getters = {
 export const mutations = {
   setReactions(state, { messageId, reaction }) {
     Vue.set(state.reactions, messageId, reaction)
+  },
+  setAccountDPNS(state, accountDPNS) {
+    Vue.set(state, 'accountDPNS', accountDPNS)
   },
   setLastSeenDirectMessage(state, { chatPartnerUserName, timestamp }) {
     Vue.set(state.dappState.lastSeen, chatPartnerUserName, timestamp)
@@ -423,8 +442,9 @@ export const mutations = {
   setPresentedOnboarding(state, bool) {
     state.presentedOnboarding = bool
   },
-  setDPNSUser(state, dpnsUser) {
-    Vue.set(state.dpns, dpnsUser.normalizedLabel, dpnsUser)
+  setDPNSDoc(state, dpnsDoc) {
+    console.log('dpnsDoc :>> ', dpnsDoc)
+    Vue.set(state.dpns, dpnsDoc.dashUniqueIdentityId, dpnsDoc)
   },
   setFollows(state, { follows, followType, userName, userId }) {
     Vue.set(state.follows[followType], userName.toLowerCase(), follows)
@@ -611,37 +631,6 @@ export const actions = {
 
     return validSessionIdentity || null
   },
-  async validateDocumentSessionIdentity({ dispatch }, documents) {
-    // const documentPromises =
-
-    const validDocuments = []
-    for (let idx = 0; idx < documents.length; idx++) {
-      const doc = documents[idx]
-      const dpnsUser = await dispatch('resolveUsername', doc.data.userName)
-
-      // Find a valid session
-      const validSessionResult = await dispatch(
-        'fetchValidSessionIdentity',
-        doc.toJSON()
-      )
-
-      console.log('validator validSessionResult :>> ', validSessionResult)
-
-      console.log('validator', doc, { dpnsUser })
-
-      if (
-        validSessionResult && // jams.$ownerId === Session.sessionIdentityId with valid timestamp
-        dpnsUser && // label exists on dpns
-        dpnsUser.$id === doc.data.userId && // jams.userId === dpns.userId for given label
-        dpnsUser.records.dashUniqueIdentityId === validSessionResult.$ownerId // The main identity that authorized the session owns the username
-      ) {
-        doc.data.userName = dpnsUser.label // Overwrite userName to ensure correct capitalization
-        validDocuments.push(doc)
-      }
-    }
-    return validDocuments
-    // return documents
-  },
   async fetchLastSeen({ commit, dispatch, state }, eventType) {
     const queryOpts = {
       limit: 1,
@@ -684,15 +673,13 @@ export const actions = {
   },
   async bookmarkJam(
     { dispatch, state },
-    { jamId, isBookmarked = true, opUserId, opUserName, userName }
+    { jamId, isBookmarked = true, opOwnerId }
   ) {
     const bookmark = {
       jamId,
       isBookmarked,
       userId: state.name.userId,
-      userName,
-      opUserId,
-      opUserName,
+      opOwnerId,
     }
     await dispatch('submitDocument', { type: 'bookmarks', doc: bookmark })
   },
@@ -701,7 +688,7 @@ export const actions = {
       limit: 100,
       startAt: 1,
       orderBy: [['$createdAt', 'desc']],
-      where: [['userId', '==', state.name.userId]],
+      where: [['$ownerId', '==', state.accountDPNS.$ownerId]],
     }
 
     let bookmarksByUserId = await dispatch('queryDocuments', {
@@ -742,12 +729,12 @@ export const actions = {
     // })
     commit('setBookmarked', bookmarkedJamsByUser)
   },
-  async fetchLikesByUser({ commit, dispatch, state }, { userId, userName }) {
+  async fetchLikesByUser({ commit, dispatch, state }, { ownerId }) {
     const queryOpts = {
       limit: 20,
       startAt: 1,
-      orderBy: [['$createdAt', 'desc']],
-      where: [['userId', '==', userId]],
+      orderBy: [['$updatedAt', 'desc']],
+      where: [['$ownerId', '==', ownerId]],
     }
 
     let likesByUserId = await dispatch('queryDocuments', {
@@ -779,7 +766,10 @@ export const actions = {
     const likedJamsByUser = await Promise.all(promisedLikes)
 
     console.log('likedJamsByUser :>> ', likedJamsByUser)
-    commit('setLikedJamsByUsername', { jams: likedJamsByUser, userName })
+    commit('setLikedJamsByUsername', {
+      jams: likedJamsByUser,
+      userName: ownerId,
+    })
   },
   async fetchNotifications({ commit, dispatch, state, getters }) {
     const fetchIt = async function ({ docType, where }) {
@@ -804,18 +794,21 @@ export const actions = {
     }
 
     const notificationTypes = [
-      { docType: 'jams', where: [['opUserId', '==', state.name.userId]] },
+      {
+        docType: 'jams',
+        where: [['opOwnerId', '==', state.accountDPNS.$ownerId]],
+      },
       {
         docType: 'likes',
         where: [
-          ['opUserId', '==', state.name.userId],
+          ['opOwnerId', '==', state.accountDPNS.$ownerId],
           ['isLiked', '==', true],
         ],
       },
       {
         docType: 'mentions',
         where: [
-          ['mentionedUserId', '==', state.name.userId],
+          ['mentionedOwnerId', '==', state.accountDPNS.$ownerId],
           // ['index', '<', 5],
         ],
       },
@@ -1425,20 +1418,23 @@ export const actions = {
   },
   // query follows docType to get all the jammerId's this person is following
 
-  async resolveUserId({ dispatch }, userId) {
-    const queryOpts = {
-      limit: 1,
-      startAt: 1,
-      where: [['$id', '==', userId]],
-    }
+  async resolveOwnerIds({ commit }, ownerIds) {
+    console.log('ownerIds :>> ', ownerIds)
 
-    const [dpnsDoc] = await dispatch('queryDocuments', {
-      dappName: 'dpns',
-      typeLocator: 'domain',
-      queryOpts,
+    const promises = ownerIds.map((ownerId) =>
+      client.platform.names.resolveByRecord('dashUniqueIdentityId', ownerId)
+    )
+
+    const dpnsDocs = await Promise.all(promises)
+
+    const dpnsDocsJSON = dpnsDocs.map((dpnsDocs) => dpnsDocs[0].toJSON())
+
+    dpnsDocsJSON.forEach((dpnsDoc) => {
+      console.log('dpnsDoc :>> ', dpnsDoc)
+      commit('setDPNSDoc', dpnsDoc)
     })
 
-    return dpnsDoc ? dpnsDoc.toJSON() : null
+    return dpnsDocsJSON
   },
   // TODO handle multi chunk data
   async fetchFromDatastore({ dispatch }, blobHash) {
@@ -1480,7 +1476,7 @@ export const actions = {
     const uniqueUserNames = {}
 
     for (const jam of jams) {
-      uniqueUserNames[jam.userName.toLowerCase()] = true
+      uniqueUserNames[jam._userName.toLowerCase()] = true
     }
 
     for (const userName in uniqueUserNames) {
@@ -1490,7 +1486,7 @@ export const actions = {
   async fetchUserInfo({ dispatch, state }, { userName, forceRefresh = false }) {
     const userNormalizedLabel = userName.toLowerCase()
 
-    // Don't refresh cached users unless forceRefresh is requested (avoid hitting DAPI with every tweet list view)
+    // Don't refresh cached users unless forceRefresh is requested (avoid hitting DAPI with every jam list view)
     if (state.userSignups[userNormalizedLabel] && forceRefresh === false) {
       return
     }
@@ -1705,14 +1701,21 @@ export const actions = {
         break
     }
   },
+  async login({ commit }) {
+    const result = await Connect.connect()
+
+    console.log('login result :>> ', result)
+
+    const accountDPNS = result.payload
+
+    commit('setAccountDPNS', accountDPNS)
+
+    this.$router.push('/discover')
+  },
   async sendJam(
     { dispatch, state },
-    { jamText, replyToJamId = '', reJamId = '', opUserId = '', opUserName = '' }
+    { jamText, replyToJamId = '', reJamId = '' }
   ) {
-    const identity = await client.platform.identities.get(
-      client.account.getIdentityIds()[0]
-    )
-
     const tags = linkify
       .find(jamText, 'hashtag')
       .map((x) => x.value.substring(1))
@@ -1739,151 +1742,127 @@ export const actions = {
 
     const jamDocProperties = {
       text: jamText,
-      userName: state.name.label,
-      userId: state.name.userId,
       replyToJamId,
       reJamId,
-      opUserId,
-      opUserName,
-      mentionedUserIds: mentionedUserIdsExist,
+      mentionedOwnerIds: mentionedUserIdsExist,
       tags,
     }
 
     console.log('jamDocProperties :>> ', jamDocProperties)
 
-    const jamDoc = await client.platform.documents.create(
-      'jembe.jams',
-      identity,
-      jamDocProperties
-    )
-
-    // Convert tags array to individual documents for the jeme.tags doctype,
-    // this serves as an index for querying jams filtered by tags
-
-    const tagsDocProperties = []
-
-    tags.forEach((value, index, array) => {
-      console.log('tag value :>> ', value)
-      if (value == null) return
-
-      const tagDocProperties = {
-        tag: value,
-        opUserId: state.name.userId,
-        jamId: jamDoc.id.toString(),
-        index,
-      }
-
-      console.log('tagsDocProperties :>> ', tagsDocProperties)
-
-      const tDocPromise = client.platform.documents.create(
-        'jembe.tags',
-        identity,
-        tagDocProperties
-      )
-
-      tagsDocProperties.push(tDocPromise)
+    const result = await dispatch('submitDocument', {
+      typeLocator: 'jembe.jams',
+      document: jamDocProperties,
     })
 
-    const tagsDocs = await Promise.all(tagsDocProperties)
-
-    // Convert mentionedUserIds array to individual documents for the jeme.mentions doctype,
-    // this serves as an index for querying jams filtered by mentions
-
-    const mentionsDocProperties = []
-
-    mentionedUserIds.forEach((value, index, array) => {
-      console.log('value :>> ', value)
-      if (value == null) return
-
-      const mDocProperties = {
-        mentionedUserId: jamDoc.data.mentionedUserIds[index],
-        mentionedUserName: mentions[index].value.substring(1),
-        opUserId: state.name.userId,
-        opUserName: state.name.label,
-        jamId: jamDoc.id.toString(),
-        index,
-      }
-
-      console.log('mDocProperties :>> ', mDocProperties)
-
-      const mDocPromise = client.platform.documents.create(
-        'jembe.mentions',
-        identity,
-        mDocProperties
-      )
-
-      mentionsDocProperties.push(mDocPromise)
-    })
-
-    const mentionsDocs = await Promise.all(mentionsDocProperties)
-
-    console.log('mentionsDocs :>> ', mentionsDocs)
-
-    // Submit Jam and additional mentions and tags docs (as indices) in a batch transition
-    const documents = [].concat(jamDoc, ...mentionsDocs, ...tagsDocs)
-
-    const documentBatch = {
-      create: documents,
-      replace: [],
-      delete: [],
-    }
-
-    const result = await client.platform.documents.broadcast(
-      documentBatch,
-      identity
-    )
     console.log('result :>> ', result)
-    // const docs = []
 
-    // docs.push(jamDoc)
+    // // Convert tags array to individual documents for the jeme.tags doctype,
+    // // this serves as an index for querying jams filtered by tags
 
-    // await dispatch('submitDocument', { type: 'jams', docs })
+    // const tagsDocProperties = []
+
+    // tags.forEach((value, index, array) => {
+    //   console.log('tag value :>> ', value)
+    //   if (value == null) return
+
+    //   const tagDocProperties = {
+    //     tag: value,
+    //     opOwnerId: state.accountDPNS.$ownerId,
+    //     jamId: jamDoc.id.toString(),
+    //     index,
+    //   }
+
+    //   console.log('tagsDocProperties :>> ', tagsDocProperties)
+
+    //   const tDocPromise = client.platform.documents.create(
+    //     'jembe.tags',
+    //     identity,
+    //     tagDocProperties
+    //   )
+
+    //   tagsDocProperties.push(tDocPromise)
+    // })
+
+    // const tagsDocs = await Promise.all(tagsDocProperties)
+
+    // // Convert mentionedUserIds array to individual documents for the jeme.mentions doctype,
+    // // this serves as an index for querying jams filtered by mentions
+
+    // const mentionsDocProperties = []
+
+    // mentionedUserIds.forEach((value, index, array) => {
+    //   console.log('value :>> ', value)
+    //   if (value == null) return
+
+    //   const mDocProperties = {
+    //     mentionedOwnerId: jamDoc.data.mentionedUserIds[index],
+    //     opOwnerId: state.accountDPNS.$ownerId,
+    //     jamId: jamDoc.id.toString(),
+    //     index,
+    //   }
+
+    //   console.log('mDocProperties :>> ', mDocProperties)
+
+    //   const mDocPromise = client.platform.documents.create(
+    //     'jembe.mentions',
+    //     identity,
+    //     mDocProperties
+    //   )
+
+    //   mentionsDocProperties.push(mDocPromise)
+    // })
+
+    // const mentionsDocs = await Promise.all(mentionsDocProperties)
+
+    // console.log('mentionsDocs :>> ', mentionsDocs)
+
+    // // Submit Jam and additional mentions and tags docs (as indices) in a batch transition
+    // const documents = [].concat(jamDoc, ...mentionsDocs, ...tagsDocs)
+
+    // const documentBatch = {
+    //   create: documents,
+    //   replace: [],
+    //   delete: [],
+    // }
+
+    // const result = await client.platform.documents.broadcast(
+    //   documentBatch,
+    //   identity
+    // )
+    // console.log('result :>> ', result)
   },
   async sendJamAndRefreshJams(
     { dispatch },
-    {
-      jamText,
-      replyToJamId = '',
-      reJamId = '',
-      opUserId = '',
-      opUserName = '',
-      view = '/discover',
-    }
+    { jamText, replyToJamId = '', reJamId = '', view }
   ) {
     await dispatch('sendJam', {
       jamText,
       replyToJamId,
       reJamId,
-      opUserId,
-      opUserName,
       view,
     })
 
-    // TODO remove orderBy ASC case when switching to fetching deltas, order the view instead
-    let orderBy = [['$createdAt', 'desc']]
-    // In case of a thread conversation, sort oldest first
+    // // TODO remove orderBy ASC case when switching to fetching deltas, order the view instead
+    const orderBy = [['$createdAt', 'desc']]
+    // // In case of a thread conversation, sort oldest first
 
-    if (view.includes('/status/')) {
-      orderBy = [['$createdAt', 'asc']]
-      await dispatch('fetchReplyThread', {
-        view,
-        jamId: replyToJamId,
-      })
-    } else {
-      await dispatch('fetchJams', { view, orderBy })
-    }
+    // if (view.includes('/status/')) {
+    // orderBy = [['$createdAt', 'asc']]
+    // await dispatch('fetchReplyThread', {
+    // view,
+    // jamId: replyToJamId,
+    // })
+    // } else {
+    await dispatch('fetchJams', { view, orderBy })
+    // }
   },
-  async likeJam(
-    { dispatch, state },
-    { jamId, isLiked = true, opUserId, opUserName, userName }
-  ) {
+  async likeJam({ dispatch, state }, { jamId, isLiked = true, opOwnerId }) {
     const like = {
       jamId,
       isLiked,
-      userId: state.name.userId,
-      userName,
-      opUserId,
-      opUserName,
+      ownerId: state.accountDPNS.$ownerId,
+      opOwnerId,
     }
     console.log('like :>> ', like)
     console.log(JSON.stringify(like))
@@ -1992,7 +1971,7 @@ export const actions = {
       queryOpts,
     })
 
-    const rootJam = rootResult.toJSON()
+    const rootJam = rootResult
     jams.push(rootJam)
     console.log('jams rootJam :>> ', jams)
 
@@ -2011,7 +1990,7 @@ export const actions = {
         queryOpts,
       })
 
-      const contextJam = contextResult.toJSON()
+      const contextJam = contextResult
       console.log('contextJam :>> ', contextJam)
 
       // Add context to the beginning of the conversation
@@ -2049,7 +2028,7 @@ export const actions = {
   //   const jams = state.jams.filter((jam) => jam.$id === jamId)
   //   commit('setJams', jams)
   // },
-  async fetchJamIdsByTag({ dispatch }, { tag }) {
+  async fetchJamIdsByTag({ dispatch }, { tag, byUserId = undefined }) {
     // Resolve userName to DPNS id
     console.log('fetchJamIdsByTag', { tag })
 
@@ -2061,6 +2040,12 @@ export const actions = {
         ['tag', '==', tag],
       ],
     }
+
+    // Seach includes `from: username` option
+    if (byUserId) {
+      queryOpts.where.push(['$ownerId', '==', byUserId])
+    }
+
     const result = await dispatch('queryDocuments', {
       dappName: 'jembe',
       typeLocator: 'tags',
@@ -2118,45 +2103,43 @@ export const actions = {
     { dispatch, commit },
     { view, orderBy = undefined, where = undefined }
   ) {
-    console.log('fetchJams()')
-    console.log('orderBy :>> ', orderBy)
+    console.log('fetchJams(), orderBy', orderBy)
+
     const queryOpts = {
       startAt: 1,
       limit: 100,
       orderBy,
-      where,
+      // where,
     }
     console.log('queryOpts :>> ', queryOpts)
 
-    const result = await dispatch('queryDocuments', {
+    const jams = await dispatch('queryDocuments', {
       dappName: 'jembe',
       typeLocator: 'jams',
       queryOpts,
     })
 
-    // Convert to JSON format to avoid trouble with the vuex-persisted-state localstorage plugin
-    const jams = result.map((jam) => jam.toJSON())
-
     // Resolve jams that have reJam content concurrently
-    const promisedJams = jams.map(async (jam) => {
-      if (jam.reJamId !== '') {
-        const reJam = await dispatch('fetchJamById', jam.reJamId)
-        reJam.reJamByUsername = jam.userName
-        reJam.$id = jam.$id
-        return reJam
-      } else {
-        return jam
-      }
-    })
+    // const promisedJams = jams.map(async (jam) => {
+    //   if (jam.reJamId !== '') {
+    //     const reJam = await dispatch('fetchJamById', jam.reJamId)
+    //     reJam.reJamByUsername = jam.userName
+    //     reJam.$id = jam.$id
+    //     return reJam
+    //   } else {
+    //     return jam
+    //   }
+    // })
 
-    const resolvedJams = await Promise.all(promisedJams)
+    // const resolvedJams = await Promise.all(promisedJams)
 
-    commit('setJams', { view, jams: resolvedJams })
+    commit('setJams', { view, jams })
+    // commit('setJams', { view, jams: resolvedJams })
 
-    dispatch('refreshLikesInState', { view })
-    dispatch('refreshCommentCountInState', { view })
-    dispatch('refreshRejamCountInState', { view })
-    dispatch('fetchUserInfoForJams', resolvedJams)
+    // dispatch('refreshLikesInState', { view })
+    // dispatch('refreshCommentCountInState', { view })
+    // dispatch('refreshRejamCountInState', { view })
+    // dispatch('fetchUserInfoForJams', resolvedJams)
   },
 
   // TODO remove default /discover once undefined caller is found
@@ -2425,10 +2408,10 @@ export const actions = {
     const queryOpts = {
       startAt: 1,
       limit: 100,
-      orderBy: [['$createdAt', 'asc']],
+      orderBy: [['$updatedAt', 'asc']],
       where: [
         ['jamId', '==', jamId],
-        ['$createdAt', '>', likesCount.refreshedAt],
+        ['$updatedAt', '>', likesCount.refreshedAt],
       ],
     }
     console.log('countLikes queryOpts :>> ', queryOpts)
@@ -2702,46 +2685,28 @@ export const actions = {
     })
     console.log('saveDappState result :>> ', result)
   },
-  async submitDocument(
-    // eslint-disable-next-line no-unused-vars
-    { commit, dispatch, state },
-    { contract = 'jembe', type, doc }
-  ) {
-    console.log('submittingocument')
-    console.log({ doc })
-    console.log('of type')
-    console.log({ type })
+  async submitDocument({ dispatch }, { typeLocator, document }) {
+    console.log('submitDocument', document, typeLocator)
 
-    const { platform } = client
+    const [contractName, docType] = typeLocator.split('.')
 
+    console.log('contractName,docType :>> ', contractName, docType)
     try {
-      const identityId = client.account.getIdentityIds()[0]
-      // const { identityId } = state
-      console.log({ identityId })
-      const identity = await platform.identities.get(identityId)
-      // const identity = await cachedOrGetIdentity(client, identityId)
+      const contractId = client
+        .getApps()
+        .apps[contractName].contractId.toString()
 
-      // console.log({ identity })
+      const typeLocatorById = `${contractId}.${docType}`
 
-      // Create the note document
-      const document = await platform.documents.create(
-        `${contract}.${type}`,
-        identity,
-        doc
-      )
-      console.log('created document :>> ', document)
-      const documentBatch = {
-        // TODO phaseb add delegatedSignatures document and broadcast as batch
-        create: [document],
-        replace: [],
-        delete: [],
-      }
-      // console.log('created document:', { document })
-      // Sign and submit the document
-      const result = await platform.documents.broadcast(documentBatch, identity)
-      console.log('document submitted result :>> ', result.toJSON())
-      // commit('addDocument', { identity, document }) // FIXME next under contractId
-      commit('setIsSyncing', false)
+      console.log('typeLocatorById :>> ', typeLocatorById)
+
+      const result = await Connect.broadcast({
+        typeLocator: typeLocatorById,
+        document,
+      })
+
+      console.log('document submitted result :>> ', result)
+
       return result
     } catch (e) {
       dispatch('showSnackbar', { text: e.message })
@@ -2854,66 +2819,8 @@ export const actions = {
     commit('setSignups', signupsJSON)
   },
 
-  async initOrCreateAccount({ commit, dispatch, state }, { mnemonicPin }) {
-    // Get client to isReady state (with existing mnemonic or creating a new one)
-    // Check if we have a balance, if not, get a drip
-    // If Getting a drip, wait via setInterval for balance
-    // +if error or timeout, instruct for manual balance increase // TODO implement wait for balance timeout
-    // Once we have a balance:
-    // (check if we have an identity, if not)
-    // create identity, commit identity
-    // create name, set isRegistered = true // TODO implement recover identity and name from dpp
-    // catch errors at each step and self heal // TODO tests
-    try {
-      console.log('initorcreate, dispatch init')
-      await dispatch('initWallet', { mnemonicPin })
-    } catch (e) {
-      console.dir({ e }, { depth: 5 })
-      let message = e.message
-
-      // FIXME decryptMnemonic clearly needs better error handling
-      if (message === 'Expect mnemonic to be provided') {
-        message = 'You entered the wrong PIN / Password.'
-      }
-      commit('setClientErrors', 'Connecting to Testnet: ' + message)
-    }
-    console.log("I'm done awaiting client.isReady()....")
-
-    const confirmedBalance = client.account.getConfirmedBalance()
-    console.log('Confirmed Balance: ' + confirmedBalance)
-    if (confirmedBalance > 500000) {
-      if (!client.account.getIdentityIds()[0]) {
-        dispatch('registerIdentity')
-      } else {
-        console.log(
-          'Found existing identityId',
-          client.account.getIdentityIds[0]
-        )
-      }
-    } else {
-      try {
-        await dispatch('getMagicInternetMoney')
-        // console.log('not getting a drip, faucet is broken')
-      } catch (e) {
-        console.log('commit error?', e)
-        commit(
-          'setClientErrors',
-          e.message +
-            ' | Faucet not responding, manually send some evoDash to ' +
-            client.account.getUnusedAddress().address
-        )
-      }
-
-      // TODO need to check if identity belongs to mnemonic
-      if (!client.account.getIdentityIds()[0]) {
-        dispatch('registerIdentityOnceBalance')
-      } else {
-        console.log(
-          'Found existing identityId',
-          client.account.getIdentityIds()[0]
-        )
-      }
-    }
+  async initOrCreateAccount({ commit, dispatch, state }) {
+    await dispatch('initWallet', {}) // TODO replace with dash connect
   },
   resetStateKeepAccounts({ state, commit }) {
     console.log({ state })
@@ -2941,16 +2848,19 @@ export const actions = {
     commit('setSnackBar', snackbar)
   },
   // eslint-disable-next-line no-unused-vars
-  async initWallet({ state, commit, dispatch }) {
+  initWallet({ state, commit, dispatch }) {
     commit('clearClientErrors')
 
-    console.log('Initializing Dash.Client with mnemonic: ')
-    console.log('Mnemonic:', state.mnemonic)
+    console.log('Initializing Dash.Client')
 
     let clientOpts = {
       passFakeAssetLockProofForTests: process.env.LOCALNODE,
       dapiAddresses: process.env.DAPIADDRESSES,
-      wallet: { mnemonic: state.mnemonic },
+      // wallet: {
+      // mnemonic:
+      // 'attract glass unlock illegal era utility corn trip truly room amateur ahead', // HiAgain
+      // 'pact security road kiwi exhaust camp reason have merge window bitter stumble', // bear
+      // },
       apps: {
         dpns: process.env.DPNS,
         primitives: {
@@ -2973,58 +2883,57 @@ export const actions = {
 
     client = new Dash.Client(clientOpts)
 
-    console.log('clientOpts after init :>> ', clientOpts)
-
     Object.entries(client.getApps().apps).forEach(([name, entry]) =>
       console.log(name, entry.contractId.toString())
     )
 
-    // Timeout isReady() since we can't catch timeout errors
-    clientTimeout = setTimeout(() => {
-      commit('setClientErrors', 'Connection to Testnet timed out.')
-    }, 500000) // TODO set sane timeout
+    // client.account = await client.wallet.getAccount({ index: 0 })
 
-    client.account = await client.wallet.getAccount({ index: 0 })
+    // console.log(
+    // 'client.wallet.exportWallet() :>> ',
+    // client.wallet.exportWallet()
+    // )
 
-    commit('setMnemonic', client.wallet.exportWallet())
-    console.log('client :>> ', client)
-    console.log('client.wallet :>> ', client.wallet)
-    console.log('client.account :>> ', client.account)
-    console.log('client.wallet.mnemonic :>> ', client.wallet.mnemonic)
-    console.log(
-      'client.account.getIdentityIds()[0] :>> ',
-      client.account.getIdentityIds()[0]
-    )
-    const tmpPrivKey = client.account
-      .getIdentityHDKeyByIndex(0, 0)
-      .privateKey.toString()
-    const tmpPubKey = client.account
-      .getIdentityHDKeyByIndex(0, 0)
-      .privateKey.publicKey.toBuffer()
-      .toString('base64')
+    // const identityId = client.account.identities.getIdentityIds()[0]
 
-    console.log('tmpPrivKey, tmpPubKey :>> ', tmpPrivKey, tmpPubKey)
-    console.log(
-      'account.getIdentityIds(); :>> ',
-      client.account.getIdentityIds()
-    )
+    // console.log('identityId :>> ', identityId)
 
-    commit('setTmpPrivKey', tmpPrivKey)
+    // const [accountDPNS] = await client.platform.names.resolveByRecord(
+    // 'dashUniqueIdentityId',
+    // identityId
+    // )
+
+    // console.log('accountDPNS :>> ', accountDPNS.toJSON())
+    // commit('setAccountDPNS', accountDPNS.toJSON())
+
+    // TODO remove code
+    // const tmpPrivKey = client.account
+    //   .getIdentityHDKeyByIndex(0, 0)
+    //   .privateKey.toString()
+    // const tmpPubKey = client.account
+    //   .getIdentityHDKeyByIndex(0, 0)
+    //   .privateKey.publicKey.toBuffer()
+    //   .toString('base64')
+
+    // console.log('tmpPrivKey, tmpPubKey :>> ', tmpPrivKey, tmpPubKey)
+
+    // commit('setTmpPrivKey', tmpPrivKey)
 
     clearInterval(clientTimeout)
 
-    console.log({ client })
+    // console.log(
+    // 'init Funding address',
+    // client.account.getUnusedAddress().address
+    // )
 
-    console.log(
-      'init Funding address',
-      client.account.getUnusedAddress().address
-    )
-    console.log('init Confirmed Balance', client.account.getConfirmedBalance())
-    console.log(
-      'init Unconfirmed Balance',
-      client.account.getUnconfirmedBalance()
-    )
-    commit('setFundingAddress', client.account.getUnusedAddress().address)
+    // console.log('init Confirmed Balance', client.account.getConfirmedBalance())
+
+    // console.log(
+    //   'init Unconfirmed Balance',
+    //   client.account.getUnconfirmedBalance()
+    // )
+
+    // commit('setFundingAddress', client.account.getUnusedAddress().address)
   },
   async getMagicInternetMoney() {
     console.log('Awaiting faucet drip..')
@@ -3104,8 +3013,7 @@ export const actions = {
     }
   },
   async queryDocuments(
-    // eslint-disable-next-line no-unused-vars
-    { dispatch, commit },
+    { dispatch },
     {
       dappName,
       typeLocator,
@@ -3115,35 +3023,39 @@ export const actions = {
       },
     }
   ) {
-    // if (typeLocator !== 'Session') {
     console.log(
       'Querying documents...',
       { dappName, typeLocator, queryOpts },
       client.getApps().get(dappName).contractId.toString()
     )
-
-    // }
-    // commit('setSyncing', true)
     try {
-      let documents = await client.platform.documents.get(
+      const documents = await client.platform.documents.get(
         `${dappName}.${typeLocator}`,
         queryOpts
       )
+
+      const documentsJSON = documents.map((document) => document.toJSON())
+
+      const userNames = await dispatch(
+        'resolveOwnerIds',
+        documentsJSON.map((document) => document.$ownerId)
+      )
+
+      console.log('userNames :>> ', userNames)
+
+      for (let idx = 0; idx < documentsJSON.length; idx++) {
+        documentsJSON[idx]._userName = userNames[idx]
+          ? userNames[idx].label
+          : documentsJSON[idx].$ownerId.substr(0, 6) // FIXME use skeleton loader instead of substr, also in getter
+      }
+
       console.log(
         `Result ${dappName}.${typeLocator}`,
         { queryOpts },
-        { documents }
+        { documentsJSON }
       )
-      if (`${dappName}.${typeLocator}` === 'jembe.jams') {
-        // Ignore validation for local development
-        if (!process.env.STAY_LOGGED_IN) {
-          documents = await dispatch(
-            'validateDocumentSessionIdentity',
-            documents
-          )
-        }
-      }
-      return documents
+
+      return documentsJSON
     } catch (e) {
       console.error('Something went wrong:', e, {
         dappName,

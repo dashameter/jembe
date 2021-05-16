@@ -60,7 +60,7 @@ const initWalletAndIdentity = async () => {
 
   if (!identityId)
     identityId =
-      client.account.getIdentityIds()[0] ||
+      client.account.identities.getIdentityIds()[0] ||
       (await platform.identities.register()).id.toString()
 
   if (!identity) identity = await platform.identities.get(identityId)
