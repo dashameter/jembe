@@ -32,38 +32,13 @@
       {
         "properties": [
           {
-            "userId": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "userName": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "opUserId": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "opUserName": "asc"
+            "$ownerId": "asc"
           }
         ]
       }
     ],
     "required": [
       "text",
-      "userId",
-      "opUserId",
-      "opUserName",
-      "userName",
       "replyToJamId",
       "reJamId",
       "$createdAt",
@@ -73,32 +48,10 @@
       "text": {
         "type": "string"
       },
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
-      },
       "reJamId": {
         "type": "string",
         "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
         "maxLength": 44,
-        "minLength": 0
-      },
-      "userName": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
-      },
-      "opUserId": {
-        "type": "string",
-        "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
-        "maxLength": 44,
-        "minLength": 0
-      },
-      "opUserName": {
-        "type": "string",
-        "maxLength": 1024,
         "minLength": 0
       },
       "replyToJamId": {
@@ -107,7 +60,7 @@
         "maxLength": 44,
         "minLength": 0
       },
-      "mentionedUserIds": {
+      "mentionedOwnerIds": {
         "type": "array",
         "items": {
           "type": "string",
@@ -137,7 +90,7 @@
       {
         "properties": [
           {
-            "$createdAt": "desc"
+            "$updatedAt": "desc"
           }
         ]
       },
@@ -151,28 +104,7 @@
       {
         "properties": [
           {
-            "userId": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "userName": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "opUserId": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "opUserName": "asc"
+            "$ownerId": "asc"
           }
         ]
       },
@@ -186,12 +118,8 @@
     ],
     "required": [
       "jamId",
-      "userId",
-      "userName",
-      "opUserId",
-      "opUserName",
       "isLiked",
-      "$createdAt"
+      "$updatedAt"
     ],
     "properties": {
       "jamId": {
@@ -200,30 +128,8 @@
         "maxLength": 44,
         "minLength": 42
       },
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
-      },
       "isLiked": {
         "type": "boolean"
-      },
-      "userName": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
-      },
-      "opUserId": {
-        "type": "string",
-        "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
-        "maxLength": 44,
-        "minLength": 0
-      },
-      "opUserName": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
       }
     },
     "additionalProperties": false
@@ -233,7 +139,7 @@
       {
         "properties": [
           {
-            "$createdAt": "desc"
+            "$updatedAt": "desc"
           }
         ]
       },
@@ -247,19 +153,13 @@
       {
         "properties": [
           {
-            "userId": "asc"
+            "$ownerId": "asc"
           }
         ]
       }
     ],
-    "required": ["userId", "jammerId", "isFollowing", "$createdAt"],
+    "required": ["jammerId", "isFollowing", "$updatedAt"],
     "properties": {
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
-      },
       "jammerId": {
         "type": "string",
         "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
@@ -299,13 +199,6 @@
       {
         "properties": [
           {
-            "userId": "desc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
             "userNormalizedLabel": "asc"
           }
         ]
@@ -318,19 +211,13 @@
         ]
       }
     ],
-    "required": ["userNormalizedLabel", "userId", "$updatedAt", "$createdAt", "displayName"],
+    "required": ["userNormalizedLabel", "$updatedAt", "$createdAt", "displayName"],
     "properties": {
       "theme": {
         "type": "string"
       },
       "avatar": {
         "type": "string"
-      },
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
       },
       "statusMessage": {
         "type": "string"
@@ -368,32 +255,14 @@
       {
         "properties": [
           {
-            "userId": "asc"
-          }
-        ]
-      },
-      {
-        "properties": [
-          {
-            "userName": "desc"
+            "$ownerId": "asc"
           }
         ]
       }
     ],
-    "required": ["eventType", "timestamp", "userId", "userName"],
+    "required": ["eventType", "timestamp"],
     "properties": {
       "eventType": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
-      },
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
-      },
-      "userName": {
         "type": "string",
         "maxLength": 1024,
         "minLength": 0
@@ -420,7 +289,7 @@
       {
         "properties": [
           {
-            "mentionedUserId": "asc"
+            "mentionedOwnerId": "asc"
           }
         ]
       },
@@ -434,16 +303,14 @@
       {
         "properties": [
           {
-            "opUserId": "asc"
+            "opOwnerId": "asc"
           }
         ]
       }
     ],
     "required": [
-      "mentionedUserId",
-      "mentionedUserName",
-      "opUserId",
-      "opUserName",
+      "mentionedOwnerId",
+      "opOwnerId",
       "jamId",
       "index",
       "$createdAt"
@@ -460,27 +327,17 @@
         "maxLength": 44,
         "minLength": 42
       },
-      "opUserId": {
+      "opOwnerId": {
         "type": "string",
         "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
         "maxLength": 44,
         "minLength": 42
       },
-      "opUserName": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
-      },
-      "mentionedUserId": {
+      "mentionedOwnerId": {
         "type": "string",
         "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
         "maxLength": 44,
         "minLength": 42
-      },
-      "mentionedUserName": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
       }
     },
     "additionalProperties": false
@@ -515,12 +372,12 @@
       {
         "properties": [
           {
-            "opUserId": "asc"
+            "opOwnerId": "asc"
           }
         ]
       }
     ],
-    "required": ["opUserId", "jamId", "index", "$createdAt"],
+    "required": ["opOwnerId", "jamId", "index", "$createdAt"],
     "properties": {
       "index": {
         "type": "number",
@@ -533,7 +390,7 @@
         "maxLength": 44,
         "minLength": 42
       },
-      "opUserId": {
+      "opOwnerId": {
         "type": "string",
         "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
         "maxLength": 44,
@@ -567,24 +424,21 @@
       {
         "properties": [
           {
-            "userId": "asc"
+            "$ownerId": "asc"
           }
         ]
       },
       {
         "properties": [
           {
-            "opUserId": "asc"
+            "opOwnerId": "asc"
           }
         ]
       }
     ],
     "required": [
       "jamId",
-      "userId",
-      "userName",
-      "opUserId",
-      "opUserName",
+      "opOwnerId",
       "isBookmarked",
       "$createdAt"
     ],
@@ -595,29 +449,13 @@
         "maxLength": 44,
         "minLength": 42
       },
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
-      },
       "isBookmarked": {
         "type": "boolean"
       },
-      "userName": {
-        "type": "string",
-        "maxLength": 1024,
-        "minLength": 0
-      },
-      "opUserId": {
+      "opOwnerId": {
         "type": "string",
         "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
         "maxLength": 44,
-        "minLength": 0
-      },
-      "opUserName": {
-        "type": "string",
-        "maxLength": 1024,
         "minLength": 0
       }
     },
@@ -642,24 +480,17 @@
       {
         "properties": [
           {
-            "userId": "asc"
+            "$ownerId": "asc"
           }
         ]
       }
     ],
     "required": [
-      "userId",
       "state",
       "$createdAt",
       "$updatedAt"
     ],
     "properties": {
-      "userId": {
-        "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
-      },
       "state": {
         "type": "string"
       }

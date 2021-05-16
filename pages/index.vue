@@ -14,11 +14,7 @@
             <div v-if="!isFetchJamsFinished">
               <TweetSkeleton v-for="i in 4" :key="i" />
             </div>
-            <Tweet
-              v-for="(jam, i) in getJams('/discover')"
-              :key="i"
-              :jam="jam"
-            />
+            <Jam v-for="(jam, i) in getJams('/discover')" :key="i" :jam="jam" />
           </div>
         </v-container>
       </v-col>
@@ -37,13 +33,13 @@
 <script>
 // eslint-disable-next-line no-unused-vars
 import { mapActions, mapGetters } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 import TweetSkeleton from '~/components/tweetSkeleton'
 import Desktop from '~/components/login/Desktop'
 import searchBar from '~/components/searchBar'
 
 export default {
-  components: { searchBar, Tweet, TweetSkeleton, Desktop },
+  components: { searchBar, Jam, TweetSkeleton, Desktop },
   data() {
     return {
       isFetchJamsFinished: false,

@@ -17,7 +17,7 @@
               <span class="font-header pl-3 pt-1 pb-1"> Thread </span>
             </v-row>
             <v-divider />
-            <Tweet
+            <Jam
               v-for="(jam, i) in getJams($route.path)"
               :key="i"
               :jam="jam"
@@ -49,11 +49,11 @@
 <script>
 // eslint-disable-next-line no-unused-vars
 import { mapActions, mapGetters } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 import searchBar from '~/components/searchBar'
 
 export default {
-  components: { Tweet, searchBar },
+  components: { Jam, searchBar },
   data() {
     return { jamId: '', isLoadingThread: true }
   },

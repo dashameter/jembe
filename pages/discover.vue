@@ -61,12 +61,12 @@
 
           <ComposeJam v-if="$vuetify.breakpoint.smAndUp" />
           <!-- <Jam v-for="(jam, i) in getJams('/discover')" :key="i" :jam="jam" /> -->
-          <Tweet v-for="(jam, i) in getJams('/discover')" :key="i" :jam="jam" />
-          <OnboardDialog
+          <Jam v-for="jam in getJams('/discover')" :key="jam.$id" :jam="jam" />
+          <!-- <OnboardDialog
             v-if="showOnboardDialog"
             :dialog="showOnboardDialog"
             @close="showOnboardDialog = false"
-          />
+          /> -->
           <v-btn
             v-if="$vuetify.breakpoint.xs"
             fixed
@@ -99,11 +99,11 @@
 <script>
 // eslint-disable-next-line no-unused-vars
 import { mapActions, mapGetters } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 // import Jam from '~/components/Jam'
 import ComposeJam from '~/components/ComposeJam'
 import ComposeJamDialog from '~/components/ComposeJamDialog'
-import OnboardDialog from '~/components/profile/onboarding/OnboardDialog'
+// import OnboardDialog from '~/components/profile/onboarding/OnboardDialog'
 import searchBar from '~/components/searchBar'
 import navbarMobile from '~/components/menu/navbarMobile'
 import messagesOverlay from '~/components/messages/messagesOverlay'
@@ -112,10 +112,10 @@ export default {
   components: {
     navbarMobile,
     searchBar,
-    Tweet,
+    Jam,
     ComposeJam,
     ComposeJamDialog,
-    OnboardDialog,
+    // OnboardDialog,
     messagesOverlay,
   },
   data() {
@@ -163,7 +163,7 @@ export default {
     if (this.showOnboardDialog)
       this.$store.commit('setPresentedOnboarding', true)
 
-    this.fetchBookmarks()
+    // this.fetchBookmarks()
     await this.fetchJams({
       view: '/discover',
       orderBy: [['$createdAt', 'desc']],

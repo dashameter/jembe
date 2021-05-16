@@ -13,7 +13,7 @@
           >
           <span class="font-header pl-2"> Tags: #{{ $route.params.tag }}</span>
         </v-row>
-        <Tweet v-for="(jam, i) in sortedJams" :key="i" :jam="jam" />
+        <Jam v-for="(jam, i) in sortedJams" :key="i" :jam="jam" />
       </v-col>
       <v-col
         v-if="$vuetify.breakpoint.mdAndUp"
@@ -28,13 +28,13 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 import searchBar from '~/components/searchBar'
 
 export default {
   components: {
     searchBar,
-    Tweet,
+    Jam,
   },
   data() {
     return { jams: [] }
@@ -47,8 +47,19 @@ export default {
     },
   },
   async created() {
+    const byUserName = this.$route.query.user
+    console.log('byUserName :>> ', byUserName)
+
+    // const byUserDPNS = resolve
+
+    // const byUserId = byUserDPNS ? byUserDPNS.$id : null
+    const byUserId = null
+
     // Fetch jams from dpp
-    this.jamIds = await this.fetchJamIdsByTag({ tag: this.$route.params.tag })
+    this.jamIds = await this.fetchJamIdsByTag({
+      tag: this.$route.params.tag,
+      byUserId,
+    })
 
     let i = 0
     for (i; i < this.jamIds.length; i++) {

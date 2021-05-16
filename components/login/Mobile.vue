@@ -17,7 +17,7 @@
     </v-row>
     <v-row>
       <v-col cols="12">
-        <NameButton />
+        <LoginButton />
       </v-col>
     </v-row>
   </v-container>
@@ -25,11 +25,11 @@
 
 <script>
 import NameField from './NameField'
-import NameButton from './NameButton'
+import LoginButton from './LoginButton'
 import Headline from './Headline'
 import Subline from './Subline'
 
 export default {
-  components: { NameField, NameButton, Headline, Subline },
+  components: { NameField, LoginButton, Headline, Subline },
 }
 </script>

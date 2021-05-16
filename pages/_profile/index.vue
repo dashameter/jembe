@@ -138,7 +138,7 @@
           </v-card>
         </v-tab-item>
         <v-tab-item>
-          <Tweet is-liked />
+          <Jam is-liked />
         </v-tab-item> -->
           </v-tabs>
           <JamsByUser v-if="$route.name === 'profile'" :show-replies="false" />

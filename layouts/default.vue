@@ -236,35 +236,28 @@ export default {
   computed: {
     ...mapGetters(['getJams', 'getProfile', 'getLastSeen', 'badgeCount']),
     profileLink() {
-      return '/' + this.$store.state.name.label
+      return '/' + this.$store.state.accountDPNS.label
     },
     isIndexRoute() {
-      const isIndex = this.$route.name === 'index'
-      console.log({ isIndex })
-      return isIndex
+      return this.$route.name === 'index'
     },
   },
   async created() {
-    /// NOTIFICATIONS
     Notification.requestPermission(function (status) {
       console.log('Notification permission status:', status)
     })
 
-    /// NOTIFICATIONS
-
-    // await this.initWallet()
     this.$store.watch(
       (state) => state.snackbar.timestamp,
       () => {
-        console.log('state.snackbar :>> ', this.$store.state.snackbar)
         this.snackbar = JSON.parse(JSON.stringify(this.$store.state.snackbar))
-        console.log('this.snackbar :>> ', this.snackbar)
       }
     )
+
     await this.initOrCreateAccount({})
-    this.loopSyncSession() // TODO phaseb, launch this userId specific after name entry
-    this.loopFetchNotifications()
-    this.loopFetchDirectMessages()
+
+    // this.loopFetchNotifications()
+    // this.loopFetchDirectMessages()
   },
   mounted() {},
   methods: {
@@ -272,7 +265,6 @@ export default {
       // 'initWallet',
       'fetchDirectMessages',
       'initOrCreateAccount',
-      'syncSession',
       'resetStateKeepAccounts',
       'fetchJams',
       'refreshLikesInState',
@@ -319,26 +311,6 @@ export default {
       }
       await sleep(5000)
       this.loopFetchNotifications()
-    },
-    async loopSyncSession() {
-      if (!this.$store.getters.getTempIdentityId) {
-        await sleep(1000)
-        this.loopSyncSession()
-        return
-      }
-      await this.syncSession()
-
-      // State change to LoggedIn
-      if (this.$store.getters.hasSession && this.isIndexRoute) {
-        this.$router.push('/discover')
-      }
-
-      // State change to LoggedOut
-      if (!this.$store.getters.hasSession && !this.isIndexRoute) {
-        this.logout()
-      }
-      await sleep(5000)
-      this.loopSyncSession()
     },
   },
 }

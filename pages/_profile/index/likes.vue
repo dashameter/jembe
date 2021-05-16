@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Tweet
+    <Jam
       v-for="(jam, i) in getLikedJamsByUsername(userName)"
       :key="i"
       :jam="jam"
@@ -13,10 +13,10 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
-import Tweet from '~/components/tweet'
+import Jam from '~/components/jam'
 
 export default {
-  components: { Tweet },
+  components: { Jam },
   data() {
     return { userName: '', userId: '', isLoadingJams: false }
   },
