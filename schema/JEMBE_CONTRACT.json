@@ -18,6 +18,14 @@
       {
         "properties": [
           {
+            "metaId": "asc"
+          }
+        ],
+        "unique": true
+      },
+      {
+        "properties": [
+          {
             "replyToJamId": "asc"
           }
         ]
@@ -41,6 +49,7 @@
       "text",
       "replyToJamId",
       "reJamId",
+      "metaId",
       "$createdAt",
       "$updatedAt"
     ],
@@ -48,10 +57,16 @@
       "text": {
         "type": "string"
       },
+      "metaId": {
+        "type": "string",
+        "pattern": "^$|^[0-9a-fA-F]{24}$",
+        "maxLength": 24,
+        "minLength": 0
+      },
       "reJamId": {
         "type": "string",
         "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
-        "maxLength": 44,
+        "maxLength": 42,
         "minLength": 0
       },
       "replyToJamId": {
@@ -116,11 +131,7 @@
         ]
       }
     ],
-    "required": [
-      "jamId",
-      "isLiked",
-      "$updatedAt"
-    ],
+    "required": ["jamId", "isLiked", "$updatedAt"],
     "properties": {
       "jamId": {
         "type": "string",
@@ -211,7 +222,12 @@
         ]
       }
     ],
-    "required": ["userNormalizedLabel", "$updatedAt", "$createdAt", "displayName"],
+    "required": [
+      "userNormalizedLabel",
+      "$updatedAt",
+      "$createdAt",
+      "displayName"
+    ],
     "properties": {
       "theme": {
         "type": "string"
@@ -323,9 +339,9 @@
       },
       "jamId": {
         "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "maxLength": 24,
+        "minLength": 24
       },
       "opOwnerId": {
         "type": "string",
@@ -386,9 +402,9 @@
       },
       "jamId": {
         "type": "string",
-        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-        "maxLength": 44,
-        "minLength": 42
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "maxLength": 24,
+        "minLength": 24
       },
       "opOwnerId": {
         "type": "string",
@@ -436,12 +452,7 @@
         ]
       }
     ],
-    "required": [
-      "jamId",
-      "opOwnerId",
-      "isBookmarked",
-      "$createdAt"
-    ],
+    "required": ["jamId", "opOwnerId", "isBookmarked", "$createdAt"],
     "properties": {
       "jamId": {
         "type": "string",
@@ -461,7 +472,7 @@
     },
     "additionalProperties": false
   },
-"state": {
+  "state": {
     "indices": [
       {
         "properties": [
@@ -485,11 +496,7 @@
         ]
       }
     ],
-    "required": [
-      "state",
-      "$createdAt",
-      "$updatedAt"
-    ],
+    "required": ["state", "$createdAt", "$updatedAt"],
     "properties": {
       "state": {
         "type": "string"

@@ -5,6 +5,7 @@ import Vue from 'vue'
 import { decrypt, encrypt } from 'dashmachine-crypto'
 import dsm from 'dash-secure-message'
 import { crypto } from '@dashevo/dashcore-lib'
+import { ObjectID } from 'bson'
 
 import * as linkify from 'linkifyjs'
 import mention from 'linkifyjs/plugins/mention'
@@ -1400,21 +1401,26 @@ export const actions = {
   },
   async resolveUsername({ state, commit }, userName) {
     const userNormalizedLabel = userName.toLowerCase()
-    let dpnsUser
+
+    let dpnsDoc
+
     if (userNormalizedLabel in state.dpns) {
-      dpnsUser = state.dpns[userNormalizedLabel]
-      console.log('Found existing cached dpns user', dpnsUser)
+      dpnsDoc = state.dpns[userNormalizedLabel]
+
+      console.log('Found existing cached dpns doc', dpnsDoc)
     } else {
-      dpnsUser = await client.platform.names.resolve(
+      dpnsDoc = await client.platform.names.resolve(
         `${userNormalizedLabel}.dash`
       )
-      console.log('Fetched unknown userName', userName, dpnsUser)
-      if (!dpnsUser) return null
-      dpnsUser = dpnsUser.toJSON()
-      commit('setDPNSUser', dpnsUser)
+
+      console.log('Fetched unknown userName', userName, dpnsDoc)
+
+      if (!dpnsDoc) return null
+      dpnsDoc = dpnsDoc.toJSON()
+      commit('setDPNSDoc', dpnsDoc)
     }
-    console.log('dpnsUser :>> ', dpnsUser)
-    return dpnsUser
+    console.log('dpnsDoc :>> ', dpnsDoc)
+    return dpnsDoc
   },
   // query follows docType to get all the jammerId's this person is following
 
@@ -1716,6 +1722,10 @@ export const actions = {
     { dispatch, state },
     { jamText, replyToJamId = '', reJamId = '' }
   ) {
+    const contractId = client.getApps().apps.jembe.contractId.toString()
+    const metaId = new ObjectID().toString()
+    console.log('metaId :>> ', metaId)
+
     const tags = linkify
       .find(jamText, 'hashtag')
       .map((x) => x.value.substring(1))
@@ -1732,105 +1742,136 @@ export const actions = {
         .map((m) => dispatch('resolveUsername', m.value.substring(1)))
     )
 
-    const mentionedUserIds = mentionedUsers.map((m) => (m ? m.$id : null))
+    const mentionedOwnerIds = mentionedUsers.map((m) => (m ? m.$ownerId : null))
 
-    const mentionedUserIdsExist = mentionedUserIds.filter((m) => m != null)
-
-    console.log('mentionedUserIds :>> ', mentionedUserIds)
-
-    console.log('mentionedUserIdsExist :>> ', mentionedUserIdsExist)
+    const mentionedOwnerIdsExist = mentionedOwnerIds.filter((m) => m != null)
 
     const jamDocProperties = {
       text: jamText,
       replyToJamId,
       reJamId,
-      mentionedOwnerIds: mentionedUserIdsExist,
+      mentionedOwnerIds: mentionedOwnerIdsExist,
       tags,
+      metaId,
+      $type: 'jams',
+      $dataContractId: contractId,
     }
 
     console.log('jamDocProperties :>> ', jamDocProperties)
 
-    const result = await dispatch('submitDocument', {
-      typeLocator: 'jembe.jams',
-      document: jamDocProperties,
+    const jamDoc = jamDocProperties
+    // const jamDoc = (
+    //   await Connect.createDocument({
+    //     typeLocator: `${contractId}.jams`,
+    //     document: jamDocProperties,
+    //   })
+    // ).payload
+
+    // Convert tags array to individual documents for the jeme.tags doctype,
+    // this serves as an index for querying jams filtered by tags
+
+    const tagsDocProperties = []
+
+    tags.forEach((value, index, array) => {
+      console.log('tag value :>> ', value)
+      if (value == null) return
+
+      const tagDocProperties = {
+        tag: value,
+        opOwnerId: state.accountDPNS.$ownerId,
+        jamId: metaId,
+        index,
+        $type: 'tags',
+        $dataContractId: contractId,
+      }
+
+      console.log('tagsDocProperties :>> ', tagsDocProperties)
+
+      //   const tDocPromise = Connect.createDocument({
+      //     typeLocator: `${contractId}.tags`,
+      //     document: tagDocProperties,
+      //   })
+
+      // tagsDocProperties.push(tDocPromise)
+      tagsDocProperties.push(tagDocProperties)
     })
 
-    console.log('result :>> ', result)
+    // const tagsDocs = (await Promise.all(tagsDocProperties)).map(
+    //   (x) => x.payload
+    // )
+    const tagsDocs = tagsDocProperties
 
-    // // Convert tags array to individual documents for the jeme.tags doctype,
-    // // this serves as an index for querying jams filtered by tags
+    console.log('tagsDocs :>> ', tagsDocs)
 
-    // const tagsDocProperties = []
+    // Convert mentionedUserIds array to individual documents for the jeme.mentions doctype,
+    // this serves as an index for querying jams filtered by mentions
 
-    // tags.forEach((value, index, array) => {
-    //   console.log('tag value :>> ', value)
-    //   if (value == null) return
+    const mentionsDocProperties = []
 
-    //   const tagDocProperties = {
-    //     tag: value,
-    //     opOwnerId: state.accountDPNS.$ownerId,
-    //     jamId: jamDoc.id.toString(),
-    //     index,
-    //   }
+    mentionedOwnerIds.forEach((value, index, array) => {
+      console.log('value :>> ', value)
+      if (value == null) return
 
-    //   console.log('tagsDocProperties :>> ', tagsDocProperties)
+      const mDocProperties = {
+        mentionedOwnerId: jamDocProperties.mentionedOwnerIds[index],
+        opOwnerId: state.accountDPNS.$ownerId,
+        jamId: metaId,
+        index,
+        $type: 'mentions',
+        $dataContractId: contractId,
+      }
 
-    //   const tDocPromise = client.platform.documents.create(
-    //     'jembe.tags',
-    //     identity,
-    //     tagDocProperties
-    //   )
+      console.log('mDocProperties :>> ', mDocProperties)
 
-    //   tagsDocProperties.push(tDocPromise)
-    // })
+      //   const mDocPromise = client.platform.documents.create(
+      //     'jembe.mentions',
+      //     identity,
+      //     mDocProperties
+      //   )
 
-    // const tagsDocs = await Promise.all(tagsDocProperties)
-
-    // // Convert mentionedUserIds array to individual documents for the jeme.mentions doctype,
-    // // this serves as an index for querying jams filtered by mentions
-
-    // const mentionsDocProperties = []
-
-    // mentionedUserIds.forEach((value, index, array) => {
-    //   console.log('value :>> ', value)
-    //   if (value == null) return
-
-    //   const mDocProperties = {
-    //     mentionedOwnerId: jamDoc.data.mentionedUserIds[index],
-    //     opOwnerId: state.accountDPNS.$ownerId,
-    //     jamId: jamDoc.id.toString(),
-    //     index,
-    //   }
-
-    //   console.log('mDocProperties :>> ', mDocProperties)
-
-    //   const mDocPromise = client.platform.documents.create(
-    //     'jembe.mentions',
-    //     identity,
-    //     mDocProperties
-    //   )
-
-    //   mentionsDocProperties.push(mDocPromise)
-    // })
+      // mentionsDocProperties.push(mDocPromise)
+      mentionsDocProperties.push(mDocProperties)
+    })
 
     // const mentionsDocs = await Promise.all(mentionsDocProperties)
+    const mentionsDocs = mentionsDocProperties
 
-    // console.log('mentionsDocs :>> ', mentionsDocs)
+    console.log('mentionsDocs :>> ', mentionsDocs)
 
-    // // Submit Jam and additional mentions and tags docs (as indices) in a batch transition
-    // const documents = [].concat(jamDoc, ...mentionsDocs, ...tagsDocs)
+    // Submit Jam and additional mentions and tags docs (as indices) in a batch transition
+    const documents = [].concat(jamDoc, ...mentionsDocs, ...tagsDocs)
+    // const documents = [].concat(jamDoc, ...tagsDocs)
+
+    console.log('documents :>> ', documents)
+
+    const documentBatch = {
+      create: documents,
+      replace: [],
+      delete: [],
+    }
+
+    // const contractId = client.getApps().apps.jembe.contractId.toString()
+
+    // const createdDocument = (
+    //   await Connect.createDocument({
+    //     typeLocator: typeLocatorById,
+    //     document: jamDocProperties,
+    //   })
+    // ).payload
+
+    // console.log('createdDocument :>> ', createdDocument)
 
     // const documentBatch = {
-    //   create: documents,
+    //   create: [createdDocument],
     //   replace: [],
     //   delete: [],
     // }
+    console.log('documentBatch in jembe :>> ', documentBatch)
+    const broadcastDocumentBatch = await Connect.broadcastDocumentBatch({
+      documentBatch,
+    })
 
-    // const result = await client.platform.documents.broadcast(
-    //   documentBatch,
-    //   identity
-    // )
-    // console.log('result :>> ', result)
+    console.log('broadcastDocumentBatch :>> ', broadcastDocumentBatch)
   },
   async sendJamAndRefreshJams(
     { dispatch },
@@ -2700,7 +2741,7 @@ export const actions = {
 
       console.log('typeLocatorById :>> ', typeLocatorById)
 
-      const result = await Connect.broadcast({
+      const result = await Connect.broadcastDocument({
         typeLocator: typeLocatorById,
         document,
       })

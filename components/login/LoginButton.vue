@@ -22,9 +22,7 @@
     >
       Login with Dash
     </v-btn>
-    <span v-if="isLoading">
-      {{ this.$store.getters.getLoadingStep }}
-    </span>
+    <span v-if="isLoading"> Connecting to Dash .. </span>
   </div>
 </template>
 
