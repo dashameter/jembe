@@ -56,17 +56,19 @@ export default {
     const byUserId = null
 
     // Fetch jams from dpp
-    this.jamIds = await this.fetchJamIdsByTag({
+    // tag.jamId currently points to jam.metaId
+    // TODO once the sdk supports static $ids on document creation, revert to jam.$id
+    this.jamMetaIds = await this.fetchJamIdsByTag({
       tag: this.$route.params.tag,
       byUserId,
     })
 
     let i = 0
-    for (i; i < this.jamIds.length; i++) {
-      const jamId = this.jamIds[i]
+    for (i; i < this.jamMetaIds.length; i++) {
+      const jamMetaId = this.jamMetaIds[i]
       const that = this
 
-      this.fetchJamById(jamId).then((jam) => {
+      this.fetchJamByMetaId(jamMetaId).then((jam) => {
         // Add to component array in as-received / unsorted order
         that.jams.push(jam)
 
@@ -80,7 +82,7 @@ export default {
   methods: {
     ...mapActions([
       'fetchJamIdsByTag',
-      'fetchJamById',
+      'fetchJamByMetaId',
       'countLikes',
       'countComments',
       'countRejams',

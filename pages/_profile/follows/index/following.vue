@@ -58,7 +58,7 @@
         <!-- :disabled="!$store.getters.hasSession" -->
         <v-icon @click.stop="follow(name)"
           >{{
-            getiFollow(name.$id)
+            getiFollow(name.$ownerId)
               ? 'mdi-account-plus'
               : 'mdi-account-plus-outline'
           }}
@@ -83,7 +83,7 @@ export default {
   data() {
     return {
       userName: '',
-      userId: '',
+      ownerId: '',
       isLoading: false,
       userFollowing: [],
     }
@@ -95,21 +95,27 @@ export default {
     this.userName = this.$route.params.profile
     try {
       this.isLoading = true
-      this.userId = (await this.resolveUsername(this.userName)).$id
+      this.ownerId = (await this.resolveUsername(this.userName)).$ownerId
+      console.log('this.ownerId :>> ', this.ownerId)
       await this.fetchFollows({
         followType: 'following',
-        userId: this.userId,
-        userName: this.userName,
+        ownerId: this.ownerId,
       })
 
-      const userFollowingPromises = this.getUserFollowing(this.userName).map(
+      const userFollowingPromises = this.getUserFollowing(this.ownerId).map(
         (uid) => {
-          return this.resolveUserId(uid)
+          console.log('uid :>> ', uid)
+          return this.resolveOwnerIds([uid])
         }
       )
-      this.userFollowing = await Promise.all(userFollowingPromises)
+      this.userFollowing = (await Promise.all(userFollowingPromises)).map(
+        (x) => x[0]
+      )
+
+      console.log('this.userFollowing :>> ', this.userFollowing)
 
       this.userFollowing.map((x) => {
+        console.log('x :>> ', x)
         return this.fetchProfile(x.normalizedLabel)
       })
     } catch (e) {
@@ -123,12 +129,12 @@ export default {
       'fetchProfile',
       'fetchFollows',
       'resolveUsername',
-      'resolveUserId',
+      'resolveOwnerIds',
       'followJammer',
       'showSnackbar',
     ]),
     async follow(dpnsUser) {
-      const isFollowing = !this.getiFollow(dpnsUser.$id)
+      const isFollowing = !this.getiFollow(dpnsUser.$ownerId)
       console.log('isFollowing :>> ', isFollowing)
       await this.showSnackbar({
         // text: `You are now following {jammerId}`,
@@ -136,8 +142,7 @@ export default {
         color: '#008de4',
       })
       await this.followJammer({
-        jammerId: dpnsUser.$id,
-        userName: dpnsUser.label, // FIXME jammerId should go with jammerName, not userName
+        jammerId: dpnsUser.$ownerId,
         isFollowing,
       })
       this.$forceUpdate()

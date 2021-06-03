@@ -66,7 +66,7 @@
       "reJamId": {
         "type": "string",
         "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
-        "maxLength": 42,
+        "maxLength": 44,
         "minLength": 0
       },
       "replyToJamId": {
@@ -150,7 +150,7 @@
       {
         "properties": [
           {
-            "$updatedAt": "desc"
+            "$updatedAt": "asc"
           }
         ]
       },
@@ -443,16 +443,9 @@
             "$ownerId": "asc"
           }
         ]
-      },
-      {
-        "properties": [
-          {
-            "opOwnerId": "asc"
-          }
-        ]
       }
     ],
-    "required": ["jamId", "opOwnerId", "isBookmarked", "$createdAt"],
+    "required": ["jamId", "isBookmarked", "$createdAt"],
     "properties": {
       "jamId": {
         "type": "string",
@@ -462,12 +455,6 @@
       },
       "isBookmarked": {
         "type": "boolean"
-      },
-      "opOwnerId": {
-        "type": "string",
-        "pattern": "^$|^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{42,44}$",
-        "maxLength": 44,
-        "minLength": 0
       }
     },
     "additionalProperties": false

@@ -78,7 +78,7 @@
                     class="mt-n5 lowercase"
                     font-weight="bold"
                     style="color: #008de4"
-                    :disabled="!$store.getters.hasSession"
+                    :disabled="!$store.getters.isLoggedIn"
                     @click.stop="followByUsername()"
                     >{{ amIFollowingJammer ? 'Following' : 'Follow' }}
                   </v-btn>
@@ -99,7 +99,7 @@
                   <span
                     style="font-weight: bold; color: black"
                     class="follow"
-                    >{{ getUserFollowingCount(jamUser) }}</span
+                    >{{ getUserFollowingCount(jammerId) }}</span
                   >
                   Following
                 </nuxt-link>
@@ -107,7 +107,7 @@
                   <span
                     style="font-weight: bold; color: black"
                     class="ml-2 follow"
-                    >{{ getUserFollowersCount(jamUser) }}</span
+                    >{{ getUserFollowersCount(jammerId) }}</span
                   >
                   Followers
                 </nuxt-link>
@@ -202,8 +202,10 @@ export default {
     this.jamUser = this.$route.params.profile
     const dpnsUser = await this.resolveUsername(this.jamUser)
 
+    console.log('profile dpnsUser :>> ', dpnsUser)
+
     if (dpnsUser) {
-      this.jammerId = dpnsUser.$id
+      this.jammerId = dpnsUser.$ownerId
       this.amIFollowingJammer = this.$store.getters.getiFollow(this.jammerId)
 
       this.fetchUserInfo({ userName: this.jamUser, forceRefresh: true })

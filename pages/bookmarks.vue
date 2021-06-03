@@ -14,7 +14,7 @@
           <span class="font-header pl-2"> Bookmarks </span>
         </v-row>
         <v-row class="handle pl-14 mt-n3 mb-2">
-          @{{ $store.state.name.label }}
+          @{{ $store.state.accountDPNS.label }}
         </v-row>
         <v-divider />
 

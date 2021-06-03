@@ -7,7 +7,7 @@
       />
       <v-row no-gutters class="flex-nowrap fill-height" justify="center">
         <v-col
-          v-if="$vuetify.breakpoint.smAndUp && $store.getters.hasSession"
+          v-if="$vuetify.breakpoint.smAndUp && $store.getters.isLoggedIn"
           cols="1"
           style="max-width: 475px"
         >

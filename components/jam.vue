@@ -10,7 +10,7 @@
       @click="goTo(toThreadLink, $event)"
     >
       <v-row
-        v-if="jam.reJamByUsername"
+        v-if="jam.reJamByOwnerId"
         class="metaline"
         style="margin-bottom: 2px"
       >
@@ -20,9 +20,9 @@
           ></v-col
         >
         <v-col class="pa-0 metaline" style="z-index: 1">
-          <nuxt-link :to="'/' + jam.reJamByUsername"
+          <nuxt-link :to="'/' + getUserName(jam.reJamByOwnerId)"
             ><span class="overline topline"
-              >Rejam by {{ jam.reJamByUsername }}</span
+              >Rejam by {{ getUserName(jam.reJamByOwnerId) }}</span
             ></nuxt-link
           >
         </v-col>
@@ -52,18 +52,20 @@
             }"
           >
             <span>
-              <nuxt-link :to="'/' + jam._userName" class="jam-name"
+              <nuxt-link :to="'/' + getUserName(jam.$ownerId)" class="jam-name"
                 ><span id="username" class="username">
                   {{
-                    getProfile(jam._userName).displayName
-                      ? getProfile(jam._userName).displayName
-                      : jam._userName
+                    getProfile(jam.$ownerId).displayName
+                      ? getProfile(jam.$ownerId).displayName
+                      : getUserName(jam.$ownerId)
                   }}</span
                 >
-                <span class="handle"> @{{ jam._userName }} · </span>
+                <span class="handle"> @{{ getUserName(jam.$ownerId) }} · </span>
               </nuxt-link>
               <span class="time-posted"
-                ><nuxt-link :to="'/' + jam._userName + '/status/' + jam.$id">
+                ><nuxt-link
+                  :to="'/' + getUserName(jam.$ownerId) + '/status/' + jam.$id"
+                >
                   {{ posted(jam.$createdAt) }}</nuxt-link
                 ></span
               >
@@ -79,10 +81,10 @@
               color="#008de4"
             >
               <v-icon
-                :disabled="!$store.getters.hasSession"
-                @click.stop="follow(jam.userId)"
+                :disabled="!$store.getters.isLoggedIn"
+                @click.stop="follow(jam.$ownerId)"
                 >{{
-                  getiFollow(jam.userId)
+                  getiFollow(jam.$ownerId)
                     ? 'mdi-account-plus'
                     : 'mdi-account-plus-outline'
                 }}
@@ -109,7 +111,7 @@
             <div class="hoverblue ml-n2">
               <v-btn
                 icon
-                :disabled="!$store.getters.hasSession"
+                :disabled="!$store.getters.isLoggedIn"
                 @click.stop="replyTo()"
               >
                 <v-icon size="19px">mdi-comment-outline</v-icon>
@@ -123,7 +125,7 @@
             <div class="hovergreen">
               <v-btn
                 icon
-                :disabled="!$store.getters.hasSession"
+                :disabled="!$store.getters.isLoggedIn"
                 @click.stop="reJam(jam.$id)"
               >
                 <v-icon size="22px" class="mr-1">mdi-twitter-retweet</v-icon>
@@ -142,7 +144,7 @@
                     ? 'rgba(228, 68, 129, 0.911)'
                     : ''
                 "
-                :disabled="!$store.getters.hasSession"
+                :disabled="!$store.getters.isLoggedIn"
                 @click.stop="like(jam.$id)"
               >
                 <v-icon
@@ -166,13 +168,13 @@
             <div class="hoverblue">
               <v-btn
                 icon
-                :disabled="!$store.getters.hasSession"
+                :disabled="!$store.getters.isLoggedIn"
                 @click.stop="tip(jam.$id)"
               >
                 <v-icon
                   size="20px"
                   class="mr-1 dashicon"
-                  :disabled="!$store.getters.hasSession"
+                  :disabled="!$store.getters.isLoggedIn"
                   style="fill: #757575"
                   >$dash
                 </v-icon>
@@ -187,7 +189,7 @@
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn
                     icon
-                    :disabled="!$store.getters.hasSession"
+                    :disabled="!$store.getters.isLoggedIn"
                     v-bind="attrs"
                     v-on="on"
                     ><v-icon size="21px" class="mb-1"
@@ -276,10 +278,13 @@ export default {
       'getCommentsCount',
       'getiFollow',
       'getiBookmarked',
+      'getUserName',
     ]),
     toThreadLink() {
-      if (this.$store.getters.hasSession) {
-        return '/' + this.jam._userName + '/status/' + this.jam.$id
+      if (this.$store.getters.isLoggedIn) {
+        return (
+          '/' + this.getUserName(this.jam.$ownerId) + '/status/' + this.jam.$id
+        )
       } else {
         return ''
       }
@@ -328,7 +333,6 @@ export default {
         jamId,
         isBookmarked,
         userName: this.$store.getters.getMyUserName,
-        opOwnerId: this.jam.$ownerId,
       })
       this.showSnackbar({
         // text: `You are now following {jammerId}`,
@@ -418,7 +422,7 @@ export default {
       if (event.srcElement.className !== 'linkified') this.$router.push(href)
     },
     async showLoginNag() {
-      if (!this.$store.getters.hasSession) {
+      if (!this.$store.getters.isLoggedIn) {
         await this.showSnackbar({
           color: '#008de4',
           text: 'Please login first.',
@@ -443,7 +447,9 @@ export default {
       console.log('isFollowing :>> ', isFollowing)
       await this.showSnackbar({
         // text: `You are now following {jammerId}`,
-        text: `Following: ${isFollowing}`,
+        text: isFollowing
+          ? 'You are following: ' + this.getUserName(this.jam.$ownerId)
+          : 'You stopped following: ' + this.getUserName(this.jam.$ownerId),
         color: '#008de4',
       })
       await this.followJammer({
@@ -461,7 +467,7 @@ export default {
         isLiked,
         opOwnerId: this.jam.$ownerId,
       })
-      await this.countLikes({ jamId })
+      // await this.countLikes({ jamId })
       this.isLiking = false
     },
   },

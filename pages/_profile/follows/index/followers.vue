@@ -58,7 +58,7 @@
         <!-- :disabled="!$store.getters.hasSession" -->
         <v-icon @click.stop="follow(name)"
           >{{
-            getiFollow(name.$id)
+            getiFollow(name.$ownerId)
               ? 'mdi-account-plus'
               : 'mdi-account-plus-outline'
           }}
@@ -83,7 +83,7 @@ export default {
   data() {
     return {
       userName: '',
-      userId: '',
+      ownerId: '',
       isLoading: false,
       userFollowers: [],
     }
@@ -95,18 +95,19 @@ export default {
     this.userName = this.$route.params.profile
     try {
       this.isLoading = true
-      this.userId = (await this.resolveUsername(this.userName)).$id
+      this.ownerId = (await this.resolveUsername(this.userName)).$ownerId
       await this.fetchFollows({
         followType: 'followers',
-        userId: this.userId,
-        userName: this.userName,
+        ownerId: this.ownerId,
       })
-      const userFollowersPromises = this.getUserFollowers(this.userName).map(
+      const userFollowersPromises = this.getUserFollowers(this.ownerId).map(
         (uid) => {
-          return this.resolveUserId(uid)
+          return this.resolveOwnerIds([uid])
         }
       )
-      this.userFollowers = await Promise.all(userFollowersPromises)
+      this.userFollowers = (await Promise.all(userFollowersPromises)).map(
+        (x) => x[0]
+      )
 
       this.userFollowers.map((x) => {
         return this.fetchProfile(x.normalizedLabel)
@@ -122,12 +123,12 @@ export default {
       'fetchProfile',
       'fetchFollows',
       'resolveUsername',
-      'resolveUserId',
+      'resolveOwnerIds',
       'followJammer',
       'showSnackbar',
     ]),
     async follow(dpnsUser) {
-      const isFollowing = !this.getiFollow(dpnsUser.$id)
+      const isFollowing = !this.getiFollow(dpnsUser.$ownerId)
       console.log('isFollowing :>> ', isFollowing)
       await this.showSnackbar({
         // text: `You are now following {jammerId}`,
@@ -135,8 +136,7 @@ export default {
         color: '#008de4',
       })
       await this.followJammer({
-        jammerId: dpnsUser.$id,
-        userName: dpnsUser.label, // FIXME jammerId should go with jammerName, not userName
+        jammerId: dpnsUser.$ownerId,
         isFollowing,
       })
       this.$forceUpdate()

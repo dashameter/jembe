@@ -135,6 +135,9 @@ export const getters = {
   myUserName(state) {
     return state.accountDPNS.label
   },
+  isLoggedIn(state) {
+    return !!state.accountDPNS.label
+  },
   getUserName: (state) => (ownerId) => {
     return state.dpns[ownerId]
       ? state.dpns[ownerId].label
@@ -285,27 +288,37 @@ export const getters = {
 
     return directMessages
   },
-  getUserFollowing: (state) => (userName) => {
-    const following = state.follows.following[userName.toLowerCase()]
+  getUserFollowing: (state) => (jammerId) => {
+    const following = state.follows.following[jammerId]
     return following ? following.docs : []
   },
-  getUserFollowers: (state) => (userName) => {
-    const followers = state.follows.followers[userName.toLowerCase()]
+  getUserFollowers: (state) => (jammerId) => {
+    const followers = state.follows.followers[jammerId]
     return followers ? followers.docs : []
   },
   getiFollow: (state) => (jammerId) => {
-    const following = state.follows.following[state.name.label.toLowerCase()]
-
+    console.log('state.follows :>> ', state.follows)
+    console.log('state.accountDPNS.$ownerId :>> ', state.accountDPNS.$ownerId)
+    console.log(
+      ' state.follows.following[state.accountDPNS.$ownerId]:>> ',
+      state.follows.following[state.accountDPNS.$ownerId]
+    )
+    const following = state.follows.following[state.accountDPNS.$ownerId]
+    console.log(
+      'following',
+      jammerId,
+      following ? following.docs.includes(jammerId) : false
+    )
     return following ? following.docs.includes(jammerId) : false
   },
-  getUserFollowersCount: (state) => (userName) => {
-    const follows = state.follows.followers[userName.toLowerCase()]
+  getUserFollowersCount: (state) => (jammerId) => {
+    const follows = state.follows.followers[jammerId]
     console.log('follows :>> ', follows)
 
     return follows ? follows.docs.length : '?'
   },
-  getUserFollowingCount: (state) => (userName) => {
-    const follows = state.follows.following[userName.toLowerCase()]
+  getUserFollowingCount: (state) => (jammerId) => {
+    const follows = state.follows.following[jammerId]
 
     return follows ? follows.docs.length : '?'
   },
@@ -334,9 +347,6 @@ export const getters = {
   },
   getLoadingStep(state) {
     return state.loadingSteps[state.loadingStep]
-  },
-  hasSession(state) {
-    return Object.keys(state.session).length > 0
   },
   getJams: (state) => (view) => {
     return state.jams[view]
@@ -444,11 +454,11 @@ export const mutations = {
     state.presentedOnboarding = bool
   },
   setDPNSDoc(state, dpnsDoc) {
-    console.log('dpnsDoc :>> ', dpnsDoc)
-    Vue.set(state.dpns, dpnsDoc.dashUniqueIdentityId, dpnsDoc)
+    Vue.set(state.dpns, dpnsDoc.records.dashUniqueIdentityId, dpnsDoc)
   },
-  setFollows(state, { follows, followType, userName, userId }) {
-    Vue.set(state.follows[followType], userName.toLowerCase(), follows)
+  setFollows(state, { follows, followType, ownerId }) {
+    console.log('setFollows', { follows, followType, ownerId })
+    Vue.set(state.follows[followType], ownerId, follows)
   },
   setUserSignup(state, { humanTime, doc, userName, userId }) {
     const signup = { humanTime, doc }
@@ -487,7 +497,7 @@ export const mutations = {
     Vue.set(state, 'session', { ...session })
   },
   setiFollow(state, { jammerId, isFollowing }) {
-    const userNormalizedLabel = state.name.label.toLowerCase()
+    const ownerId = state.accountDPNS.$ownerId
 
     const initFollow = {
       docs: [],
@@ -495,19 +505,19 @@ export const mutations = {
     }
 
     // Init follow if it has not finished fetching
-    if (!state.follows.following[userNormalizedLabel]) {
-      Vue.set(state.follows.following, userNormalizedLabel, initFollow)
+    if (!state.follows.following[ownerId]) {
+      Vue.set(state.follows.following, ownerId, initFollow)
     }
 
     // Just using a shorter var for brevity
-    const docs = state.follows.following[userNormalizedLabel].docs
+    const docs = state.follows.following[ownerId].docs
 
     if (isFollowing) {
       // Add userId of person I follow to state
       docs.push(jammerId)
     } else {
       // Remove the userId of the person I unfollow from state
-      state.follows.following[userNormalizedLabel].docs = docs.filter(
+      state.follows.following[ownerId].docs = docs.filter(
         (item) => item !== jammerId
       )
     }
@@ -672,17 +682,15 @@ export const actions = {
     })
     console.log('seen', lastSeenTimestampResult)
   },
-  async bookmarkJam(
-    { dispatch, state },
-    { jamId, isBookmarked = true, opOwnerId }
-  ) {
+  async bookmarkJam({ dispatch, state }, { jamId, isBookmarked = true }) {
     const bookmark = {
       jamId,
       isBookmarked,
-      userId: state.name.userId,
-      opOwnerId,
     }
-    await dispatch('submitDocument', { type: 'bookmarks', doc: bookmark })
+    await dispatch('submitDocument', {
+      typeLocator: 'jembe.bookmarks',
+      document: bookmark,
+    })
   },
   async fetchBookmarks({ commit, dispatch, state }) {
     const queryOpts = {
@@ -692,13 +700,11 @@ export const actions = {
       where: [['$ownerId', '==', state.accountDPNS.$ownerId]],
     }
 
-    let bookmarksByUserId = await dispatch('queryDocuments', {
+    const bookmarksByUserId = await dispatch('queryDocuments', {
       dappName: 'jembe',
       typeLocator: 'bookmarks',
       queryOpts,
     })
-
-    bookmarksByUserId = bookmarksByUserId.map((x) => x.toJSON())
 
     console.log('bookmarksByUserId :>>', bookmarksByUserId)
 
@@ -1427,7 +1433,11 @@ export const actions = {
   async resolveOwnerIds({ commit }, ownerIds) {
     console.log('ownerIds :>> ', ownerIds)
 
-    const promises = ownerIds.map((ownerId) =>
+    const uniqueIds = [...new Set(ownerIds)]
+
+    console.log('uniqueIds :>> ', uniqueIds)
+
+    const promises = uniqueIds.map((ownerId) =>
       client.platform.names.resolveByRecord('dashUniqueIdentityId', ownerId)
     )
 
@@ -1499,7 +1509,7 @@ export const actions = {
 
     // const userId = getUserIdFromUserName(userName)
     // TODO cache dpns userIds
-    const userId = (await dispatch('resolveUsername', userName)).$id
+    const ownerId = (await dispatch('resolveUsername', userName)).$ownerId
 
     // console.log('fetchUserInfo result :>> ', result)
 
@@ -1507,24 +1517,24 @@ export const actions = {
 
     dispatch('fetchFollows', {
       followType: 'following',
-      userId,
-      userName: userNormalizedLabel,
+      ownerId,
     })
 
     dispatch('fetchFollows', {
       followType: 'followers',
-      userId,
-      userName: userNormalizedLabel,
+      ownerId,
     })
 
-    dispatch('fetchUserSignup', {
-      userId,
-      userName: userNormalizedLabel,
-    })
+    // dispatch('fetchUserSignup', {
+    //   userId,
+    //   userName: userNormalizedLabel,
+    // })
 
     dispatch('fetchProfile', userNormalizedLabel)
   },
   async fetchProfile({ dispatch, commit, getters }, userName) {
+    console.log('fetch Profile userName :>> ', userName)
+    if (!userName) debugger
     const storedProfile = getters.getProfile(userName)
 
     const queryOpts = {
@@ -1875,7 +1885,7 @@ export const actions = {
   },
   async sendJamAndRefreshJams(
     { dispatch },
-    { jamText, replyToJamId = '', reJamId = '', view }
+    { jamText, replyToJamId = '', reJamId = '', view = '/discover' }
   ) {
     await dispatch('sendJam', {
       jamText,
@@ -1902,29 +1912,35 @@ export const actions = {
     const like = {
       jamId,
       isLiked,
-      ownerId: state.accountDPNS.$ownerId,
-      opOwnerId,
     }
     console.log('like :>> ', like)
     console.log(JSON.stringify(like))
-    await dispatch('submitDocument', { type: 'likes', doc: like })
+    await dispatch('submitDocument', {
+      typeLocator: 'jembe.likes',
+      document: like,
+    })
   },
   async followJammer(
     { dispatch, state, commit },
-    { jammerId, userName, isFollowing = true } // FIXME jammerId should go with jammerName, not userName
+    { jammerId, isFollowing = true }
   ) {
     const follow = {
       jammerId,
       isFollowing,
-      userId: state.name.userId,
     }
-    commit('setiFollow', { jammerId, isFollowing })
-    await dispatch('submitDocument', { type: 'follows', doc: follow })
-    await dispatch('fetchFollows', {
-      followType: 'followers',
-      userName,
-      userId: jammerId,
+    await dispatch('submitDocument', {
+      typeLocator: 'jembe.follows',
+      document: follow,
     })
+
+    // Updates the "followers" count in the profile view
+    dispatch('fetchFollows', {
+      followType: 'followers',
+      ownerId: jammerId,
+    })
+
+    // Updates the "followin" count
+    commit('setiFollow', { jammerId, isFollowing })
   },
   // eslint-disable-next-line no-unused-vars
   async sendDash({ dispatch, state }, { amount }) {
@@ -2053,16 +2069,16 @@ export const actions = {
       queryOpts,
     })
 
-    const comments = result.map((jam) => jam.toJSON())
+    // const comments = result.map((jam) => jam.toJSON())
 
-    jams.push(...comments)
+    jams.push(...result)
     console.log('jams comments :>> ', jams)
 
     await commit('setJams', { view, jams })
-    dispatch('refreshLikesInState', { view })
-    dispatch('refreshRejamCountInState', { view })
-    dispatch('refreshCommentCountInState', { view })
-    dispatch('fetchUserInfoForJams', jams)
+    // dispatch('refreshLikesInState', { view })
+    // dispatch('refreshRejamCountInState', { view })
+    // dispatch('refreshCommentCountInState', { view })
+    // dispatch('fetchUserInfoForJams', jams)
   },
   // TODO remove, deprecated
   // removeOtherJams({ state, commit }, jamId) {
@@ -2093,7 +2109,7 @@ export const actions = {
       queryOpts,
     })
     console.log('result :>> ', result)
-    return result.map((x) => x.data.jamId)
+    return result.map((x) => x.jamId)
   },
   async fetchJamsByUser({ dispatch }, { view, userName, showReplies = false }) {
     // Resolve userName to DPNS id
@@ -2119,6 +2135,26 @@ export const actions = {
       where,
     })
   },
+  // TODO remove MetaId and revert to $id when the sdk supports static $ids on Document creation
+  async fetchJamByMetaId({ state, dispatch, commit }, jamMetaId) {
+    // if (state.jamsById[jamId]) return { ...state.jamsById[jamId] }
+
+    console.log('jamMetaId :>> ', jamMetaId)
+    const queryOpts = {
+      limit: 1,
+      startAt: 1,
+      where: [['metaId', '==', jamMetaId]],
+    }
+    const result = await dispatch('queryDocuments', {
+      dappName: 'jembe',
+      typeLocator: 'jams',
+      queryOpts,
+    })
+    // const jam = result.map((jam) => jam.toJSON())
+    console.log('jam 0', result[0])
+    commit('setJamById', result[0])
+    return { ...result[0] }
+  },
   async fetchJamById({ state, dispatch, commit }, jamId) {
     if (state.jamsById[jamId]) return { ...state.jamsById[jamId] }
 
@@ -2134,17 +2170,17 @@ export const actions = {
       typeLocator: 'jams',
       queryOpts,
     })
-    const jam = result.map((jam) => jam.toJSON())
-    console.log('jam 0', jam[0])
-    commit('setJamById', jam[0])
-    return { ...jam[0] }
+    // const jam = result.map((jam) => jam.toJSON())
+    console.log('jam 0', result[0])
+    commit('setJamById', result[0])
+    return { ...result[0] }
   },
   // TODO only fetch Jams newer than most recent jam
   async fetchJams( // fetchJamsByView
     { dispatch, commit },
     { view, orderBy = undefined, where = undefined }
   ) {
-    console.log('fetchJams(), orderBy', orderBy)
+    console.log('fetchJams(),view', view, 'orderBy', orderBy)
 
     const queryOpts = {
       startAt: 1,
@@ -2161,21 +2197,23 @@ export const actions = {
     })
 
     // Resolve jams that have reJam content concurrently
-    // const promisedJams = jams.map(async (jam) => {
-    //   if (jam.reJamId !== '') {
-    //     const reJam = await dispatch('fetchJamById', jam.reJamId)
-    //     reJam.reJamByUsername = jam.userName
-    //     reJam.$id = jam.$id
-    //     return reJam
-    //   } else {
-    //     return jam
-    //   }
-    // })
+    const promisedJams = jams.map(async (jam) => {
+      if (jam.reJamId !== '') {
+        const reJam = await dispatch('fetchJamById', jam.reJamId)
+        reJam.reJamByOwnerId = jam.$ownerId
+        reJam.$id = jam.$id
+        return reJam
+      } else {
+        return jam
+      }
+    })
 
-    // const resolvedJams = await Promise.all(promisedJams)
+    const resolvedJams = await Promise.all(promisedJams)
 
-    commit('setJams', { view, jams })
-    // commit('setJams', { view, jams: resolvedJams })
+    console.dir(resolvedJams, { depth: 100 })
+
+    // commit('setJams', { view, jams })
+    commit('setJams', { view, jams: resolvedJams })
 
     // dispatch('refreshLikesInState', { view })
     // dispatch('refreshCommentCountInState', { view })
@@ -2208,7 +2246,7 @@ export const actions = {
     for (const idx in state.jams[view]) {
       console.log('refresh comments: jam :>> ', idx)
       // Don't dispatch countRejams for rejam entries to avoid double counting
-      if (!state.jams[view][idx].reJamByUsername) {
+      if (!state.jams[view][idx].reJamByOwnerId) {
         // console.log('{ jamId: state.jams[view][jam].$id } :>> ', {
         //   jamId: state.jams[view][idx].$id,
         // })
@@ -2226,7 +2264,7 @@ export const actions = {
     for (const idx in state.jams[view]) {
       // console.log('refresh comments: jam :>> ', idx)
       // Don't dispatch countComments for rejam entries to avoid double counting
-      if (!state.jams[view][idx].reJamByUsername) {
+      if (!state.jams[view][idx].reJamByOwnerId) {
         // console.log('{ jamId: state.jams[view][jam].$id } :>> ', {
         //   jamId: state.jams[view][idx].$id,
         // })
@@ -2322,7 +2360,7 @@ export const actions = {
     }
 
     // Set timestamp of most recent comment to only fetch newer comments in the future
-    const mostRecentComment = result[result.length - 1].toJSON()
+    const mostRecentComment = result[result.length - 1]
     commentsCount.refreshedAt = mostRecentComment.$createdAt
 
     // Add newly found comments to tally
@@ -2335,12 +2373,9 @@ export const actions = {
       dispatch('countComments', { jamId })
     }
   },
-  async fetchFollows(
-    { dispatch, commit, state },
-    { followType, userId, userName }
-  ) {
+  async fetchFollows({ dispatch, commit, state }, { followType, ownerId }) {
     // Load follows object from state if exists or init new object
-    const storedFollows = state.follows[followType][userName.toLowerCase()]
+    const storedFollows = state.follows[followType][ownerId]
     console.log('storedFollows :>> ', storedFollows)
     const follows = storedFollows
       ? { ...storedFollows }
@@ -2352,37 +2387,37 @@ export const actions = {
     let storeUserParam
 
     if (followType === 'following') {
-      queryUserParam = 'userId'
+      queryUserParam = '$ownerId'
       storeUserParam = 'jammerId'
     } else if (followType === 'followers') {
       queryUserParam = 'jammerId'
-      storeUserParam = 'userId'
+      storeUserParam = '$ownerId'
     }
 
     const queryOpts = {
       startAt: 1,
       limit: 100,
-      orderBy: [['$createdAt', 'asc']],
+      orderBy: [['$updatedAt', 'asc']],
       where: [
-        // queryUserParam: userId || jammerId == userId
-        [queryUserParam, '==', userId],
-        ['$createdAt', '>', follows.refreshedAt],
+        // queryUserParam: userId || jammerId == ownerId
+        [queryUserParam, '==', ownerId],
+        ['$updatedAt', '>', follows.refreshedAt],
       ],
     }
 
-    let result = await dispatch('queryDocuments', {
+    const result = await dispatch('queryDocuments', {
       dappName: 'jembe',
       typeLocator: 'follows',
       queryOpts,
     })
-
+    // if (followType === 'following') debugger
     // No follows docs, set state to resolve loading indicator and return early
     if (result.length === 0) {
-      commit('setFollows', { follows, followType, userName, userId })
+      commit('setFollows', { follows, followType, ownerId })
       return
     }
 
-    result = result.map((follow) => follow.toJSON())
+    // result = result.map((follow) => follow.toJSON())
 
     const deduplicatedResult = {}
     console.log('follow result :>> ', result)
@@ -2419,14 +2454,14 @@ export const actions = {
     console.log('follows :>> ', follows)
     // Set timestamp of most recent follows to only fetch newer ones in the future
     const mostRecent = result[result.length - 1]
-    follows.refreshedAt = mostRecent.$createdAt
+    follows.refreshedAt = mostRecent.$updatedAt
 
-    commit('setFollows', { follows, followType, userName, userId })
+    commit('setFollows', { follows, followType, ownerId })
 
     // Recursively call `fetchFollows()` if there are more docs than the queryLimit allowed to fetch
     // TODO test if dispatching after committing maintains reactivity
     if (result.length === queryOpts.limit) {
-      dispatch('fetchFollows', { followType, userName, userId })
+      dispatch('fetchFollows', { followType, ownerId })
     }
     return follows
   },
@@ -3084,11 +3119,11 @@ export const actions = {
 
       console.log('userNames :>> ', userNames)
 
-      for (let idx = 0; idx < documentsJSON.length; idx++) {
-        documentsJSON[idx]._userName = userNames[idx]
-          ? userNames[idx].label
-          : documentsJSON[idx].$ownerId.substr(0, 6) // FIXME use skeleton loader instead of substr, also in getter
-      }
+      // for (let idx = 0; idx < documentsJSON.length; idx++) {
+      //   documentsJSON[idx]._userName = userNames[idx]
+      //     ? userNames[idx].label
+      //     : documentsJSON[idx].$ownerId.substr(0, 6) // FIXME use skeleton loader instead of substr, also in getter
+      // }
 
       console.log(
         `Result ${dappName}.${typeLocator}`,

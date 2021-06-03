@@ -163,7 +163,11 @@ export default {
     if (this.showOnboardDialog)
       this.$store.commit('setPresentedOnboarding', true)
 
-    // this.fetchBookmarks()
+    this.fetchBookmarks()
+    this.fetchFollows({
+      followType: 'following',
+      ownerId: this.$store.state.accountDPNS.$ownerId,
+    })
     await this.fetchJams({
       view: '/discover',
       orderBy: [['$createdAt', 'desc']],
@@ -175,6 +179,7 @@ export default {
       'refreshLikesInState',
       'refreshCommentCountInState',
       'fetchBookmarks',
+      'fetchFollows',
     ]),
   },
 }
