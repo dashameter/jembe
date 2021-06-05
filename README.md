@@ -4,9 +4,19 @@
 
 ## Development Setup
 
-Jembe relies on https://github.com/dashameter/dashpay-ext-poc for login and state transition signing.
+### Dashmate Quickstart
+
+Jembe currently runs on the v.20 dev branch of dashmate.
+
+```bash
+git clone -b v0.20.0-dev.3 https://github.com/dashevo/dashmate.git
+
+dashmate reset --hard && dashmate update
+```
 
 ### DashPay Ext Quickstart
+
+Jembe relies on https://github.com/dashameter/dashpay-ext-poc for login and state transition signing.
 
 `git clone https://github.com/dashameter/dashpay-ext-poc.git`
 `npm ci`
