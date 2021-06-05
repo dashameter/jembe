@@ -7,7 +7,14 @@ const glob = require('glob')
 const envRun = process.env.NUXT_ENV_RUN
 
 let clientOpts = {
-  passFakeAssetLockProofForTests: process.env.NUXT_LOCALNODE,
+  // network: 'testnet',
+  // retries: 9999,
+  // passFakeAssetLockProofForTests: process.env.NUXT_LOCALNODE,
+  // unsafeOptions: {
+  // skipSynchronizationBeforeHeight: 415000, // only sync from start of 2021
+  // skipSynchronizationBeforeHeight: 510490,
+  // },
+
   wallet: {
     // privateKey: 'currently throws a signing error'
     mnemonic: process.env.NUXT_MNEMONIC,
