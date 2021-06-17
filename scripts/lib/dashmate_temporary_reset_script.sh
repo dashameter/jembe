@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -e
 #COLLATERAL_KEY=cSoFoRqFaA7ha2ovL4yeZPmog2CrKfq6WiDXF4CaV3RmCcTGJMGk
 #COLLATERAL_ADDRESS=ySPRMNDVBhZVZvDS4wGn4Ujuq2wP4AcwLK
 
@@ -21,7 +22,7 @@ CONFIG_NAME="local"
 MASTERNODES_COUNT=3
 
 echo "Removing all docker containers and volumes..."
-docker rm -f -v $(docker ps -a -q); docker volume prune -f; rm -rf ~/.dashmate/
+docker stop $(docker ps -a -q) || true; docker system prune --volumes -f; rm -rf ~/.dashmate/
 
 if [ $BUILD_DRIVE == true ]
 then
@@ -39,6 +40,7 @@ dashmate setup ${CONFIG_NAME} --verbose --debug-logs --miner-interval="${MINING_
 
 echo "Sending 1000 tDash to the ${FAUCET_ADDRESS} for tests"
 dashmate wallet:mint 1000 --config=${CONFIG_NAME}_seed --address=${FAUCET_ADDRESS}
+echo $BUILD_DAPI_AFTER_SETUP
 
 if [ $BUILD_DAPI_AFTER_SETUP == true ]
 then
