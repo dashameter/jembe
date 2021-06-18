@@ -92,49 +92,52 @@ const registerName = async ({ client, identity, name }) => {
 //   console.log('done saving vars')
 //   return nameRegistration
 // }
-
-users.forEach(async (user) => {
-  const clientOpts = {
-    dapiAddresses,
-    wallet: {
-      mnemonic: user.mnemonic,
-    },
-    apps: {
-      dpns: {
-        contractId: process.env.NUXT_DPNS_CONTRACT_ID,
+try {
+  users.forEach(async (user) => {
+    const clientOpts = {
+      dapiAddresses,
+      wallet: {
+        mnemonic: user.mnemonic,
       },
-      primitives: {
-        contractId: process.env.NUXT_PRIMITIVES_CONTRACT_ID_local,
+      apps: {
+        dpns: {
+          contractId: process.env.NUXT_DPNS_CONTRACT_ID,
+        },
+        // primitives: {
+        //   contractId: process.env.NUXT_PRIMITIVES_CONTRACT_ID_local,
+        // },
+        // jembe: {
+        //   contractId: process.env.NUXT_JEMBE_CONTRACT_ID_local,
+        // },
       },
-      jembe: {
-        contractId: process.env.NUXT_JEMBE_CONTRACT_ID_local,
-      },
-    },
-  }
+    }
 
-  console.dir(clientOpts, { depth: 100 })
+    console.dir(clientOpts, { depth: 100 })
 
-  const client = new Dash.Client(clientOpts)
+    const client = new Dash.Client(clientOpts)
 
-  try {
-    client.account = await initWalletAccount(client)
+    try {
+      client.account = await initWalletAccount(client)
 
-    const identity = await createIdentity(client)
+      const identity = await createIdentity(client)
 
-    const nameRegistration = await registerName({
-      client,
-      identity,
-      name: `${user.label}.dash`,
-    })
+      const nameRegistration = await registerName({
+        client,
+        identity,
+        name: `${user.label}.dash`,
+      })
 
-    console.log('nameRegistration :>> ', nameRegistration)
+      console.log('nameRegistration :>> ', nameRegistration)
 
-    // await saveNameVars({ identity, nameRegistration })
-  } catch (e) {
-    console.error('Something went wrong:\n', e)
-    console.dir(e, { depth: 100 })
-    console.dir(e.metadata, { depth: 100 })
-  } finally {
-    client.disconnect()
-  }
-})
+      // await saveNameVars({ identity, nameRegistration })
+    } catch (e) {
+      console.error('Something went wrong:\n', e)
+      console.dir(e, { depth: 100 })
+      console.dir(e.metadata, { depth: 100 })
+    } finally {
+      client.disconnect()
+    }
+  })
+} catch (e) {
+  console.log('Error message:', e);
+}
