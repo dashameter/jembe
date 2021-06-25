@@ -38,6 +38,7 @@ echo "export VUE_APP_DASHPAY_CONTRACT_ID=$(dashmate config:get platform.dashpay.
 echo "export NUXT_DAPIADDRESSES='[\"127.0.0.1:3000\"]'" >> ~/.evoenv
 echo "export VUE_APP_DAPIADDRESSES='[\"127.0.0.1:3000\"]'" >> ~/.evoenv
 echo "export NUXT_MNEMONIC=\"rival estate inside turn journey charge window rhythm marble audit amateur bus\"" >> ~/.evoenv
+echo "export VUE_APP_MNEMONIC=\"rival estate inside turn journey charge window rhythm marble audit amateur bus\"" >> ~/.evoenv
 echo "" >> ~/.evoenv
 
 
