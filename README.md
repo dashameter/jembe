@@ -1,6 +1,14 @@
 # jembe
 
 > everyone gather together in peace
+## Docs 
+nuxtjs https://nuxtjs.org/
+nuxtjs/axios https://axios.nuxtjs.org/
+nuxtjs/dotenv https://github.com/nuxt-community/dotenv-module
+nuxtjs/pwa https://pwa.nuxtjs.org/
+docker install https://docs.docker.com/engine/install/ubuntu/
+docker compose install https://docs.docker.com/compose/install/
+nvm & node install https://github.com/nvm-sh/nvm
 
 ## Development Setup
 
@@ -9,9 +17,17 @@
 Jembe currently runs on the v.20 dev branch of dashmate.
 
 ```bash
-git clone -b v0.20.0-dev.3 https://github.com/dashevo/dashmate.git
-
-dashmate reset --hard && dashmate update
+$ git clone -b v0.20.0-dev.3 https://github.com/dashevo/dashmate.git
+$ cd dashmate
+$ docker stop $(docker ps -q) # stop all docker instances
+$ docker system prune --volumes # prune all unused volumes
+$ rm -rf ~/.dashmate/ # remove dashmate folder
+$ npm i # install dependencies
+$ npm link # link dashmate to shell
+$ dashmate --version # check if dashmate command is working
+$ dashmate setup local # setup all docker nodes
+$ dashmate group:start # start all nodes
+$ dashmate reset --hard && dashmate update # reset nodes and dashmate version update
 ```
 
 ### DashPay Ext Quickstart
