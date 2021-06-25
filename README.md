@@ -57,6 +57,9 @@ Select "Load unpacked" and navigate to your `dashpay-ext-poc/dist` folder and lo
 `git clone https://github.com/dashameter/jembe.git` (ideally you clone your fork so you can work on it)
 `npm ci`
 
+To fix a missing `dash-dapp-connect` dependency issue, run following command.
+`npm i github:dashameter/dash-dapp-connect  or npm i dashameter/dash-dapp-connect`
+
 Jembe expects the following env variables:
 
 ```
