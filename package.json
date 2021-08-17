@@ -30,7 +30,7 @@
     "@nuxtjs/pwa": "^3.0.0-beta.20",
     "bson": "^4.4.0",
     "dash": "^3.20.3",
-    "dash-dapp-connect": "github:dashameter/dash-dapp-connect",
+    "dash-dapp-connect": "https://github.com/dashameter/dash-dapp-connect.git",
     "dash-secure-message": "^1.1.0",
     "dashmachine-crypto": "^0.5.0",
     "emoji-js": "^3.5.0",
