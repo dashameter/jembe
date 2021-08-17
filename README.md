@@ -11,6 +11,12 @@ Jembe currently runs on the v.20 master branch of dashmate.
 ```bash
 git clone -b master https://github.com/dashevo/dashmate.git
 
+cd dashmate
+
+npm install
+
+sudo npm link
+
 dashmate reset --hard && dashmate update
 ```
 
