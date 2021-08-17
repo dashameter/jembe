@@ -103,12 +103,6 @@ users.forEach(async (user) => {
       dpns: {
         contractId: process.env.NUXT_DPNS_CONTRACT_ID,
       },
-      primitives: {
-        contractId: process.env.NUXT_PRIMITIVES_CONTRACT_ID_local,
-      },
-      jembe: {
-        contractId: process.env.NUXT_JEMBE_CONTRACT_ID_local,
-      },
     },
   }
 

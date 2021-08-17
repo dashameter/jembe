@@ -6,10 +6,10 @@
 
 ### Dashmate Quickstart
 
-Jembe currently runs on the v.20 dev branch of dashmate.
+Jembe currently runs on the v.20 master branch of dashmate.
 
 ```bash
-git clone -b v0.20.0-dev.3 https://github.com/dashevo/dashmate.git
+git clone -b master https://github.com/dashevo/dashmate.git
 
 dashmate reset --hard && dashmate update
 ```

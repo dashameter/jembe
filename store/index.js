@@ -117,7 +117,7 @@ const getInitState = () => {
     isSyncing: false,
     snackbar: { show: false, color: 'red', text: '', timestamp: 0, link: null },
     directMessage: {
-      dm: [],
+      dmsg: [],
       // lastTimeCheckedReceived: 0,
       // lastTimeCheckedSent: 0,
     },
@@ -212,14 +212,14 @@ export const getters = {
     }
   },
   getLastPartnerMessage: (state, getters) => (chatPartnerUserName) => {
-    const chatPartnerMessages = state.directMessage.dm.filter((message) => {
+    const chatPartnerMessages = state.directMessage.dmsg.filter((message) => {
       return message.senderUserName === chatPartnerUserName
     })
     const lastDoc = chatPartnerMessages[chatPartnerMessages.length - 1]
     return lastDoc ? lastDoc.encMessage : ''
   },
   getLastPartnerMessageTime: (state, getters) => (chatPartnerUserName) => {
-    const chatPartnerMessages = state.directMessage.dm.filter((message) => {
+    const chatPartnerMessages = state.directMessage.dmsg.filter((message) => {
       return message.senderUserName === chatPartnerUserName
     })
     const lastDoc = chatPartnerMessages[chatPartnerMessages.length - 1]
@@ -235,7 +235,7 @@ export const getters = {
       chatPartnerUserName,
       lastSeenTimestamp
     )
-    const chatPartnerMessages = state.directMessage.dm.filter((message) => {
+    const chatPartnerMessages = state.directMessage.dmsg.filter((message) => {
       return (
         message.senderUserName === chatPartnerUserName &&
         message.$createdAt > lastSeenTimestamp
@@ -279,7 +279,7 @@ export const getters = {
     return Object.entries(state.contactList)
   },
   getDirectMessages: (state) => (chatPartnerUserName) => {
-    const directMessages = state.directMessage.dm.filter((message) => {
+    const directMessages = state.directMessage.dmsg.filter((message) => {
       return (
         message.senderUserId === chatPartnerUserName ||
         message.receiverUserId === chatPartnerUserName
@@ -439,16 +439,16 @@ export const mutations = {
   },
   setDirectMessage(state, directMessage) {
     console.log('directMessage :>> ', directMessage)
-    Vue.set(state.directMessage, 'dm', directMessage.dm)
+    Vue.set(state.directMessage, 'dmsg', directMessage.dmsg)
   },
   updateDirectMessageSending(state, { tmp$id, directMessage }) {
-    const idx = state.directMessage.dm.findIndex(
+    const idx = state.directMessage.dmsg.findIndex(
       (message) => message.$id === tmp$id
     )
-    if (idx > -1) Vue.set(state.directMessage.dm, idx, directMessage)
+    if (idx > -1) Vue.set(state.directMessage.dmsg, idx, directMessage)
   },
   appendDirectMessageSending(state, directMessage) {
-    state.directMessage.dm.push(directMessage)
+    state.directMessage.dmsg.push(directMessage)
   },
   setPresentedOnboarding(state, bool) {
     state.presentedOnboarding = bool
@@ -880,10 +880,10 @@ export const actions = {
   async fetchDirectMessages({ commit, dispatch, state, getters }) {
     // deep copy the object and array to avoid mutating it
     const directMessage = {}
-    directMessage.dm = [...state.directMessage.dm]
+    directMessage.dmsg = [...state.directMessage.dmsg]
 
     const lastTimeChecked = function (direction) {
-      const dms = directMessage.dm.filter(
+      const dms = directMessage.dmsg.filter(
         (message) =>
           message[`${direction}UserId`] === state.name.userId &&
           !message.isSending // Only consider timestamps of messages already on dpp
@@ -919,7 +919,7 @@ export const actions = {
 
     const receivedResult = dispatch('queryDocuments', {
       dappName: 'directmessage',
-      typeLocator: 'dm',
+      typeLocator: 'dmsg',
       queryOpts: queryOptsReceived,
     })
 
@@ -946,7 +946,7 @@ export const actions = {
         )[0][1]
 
         // Add new received messages to array that we commit to state
-        directMessage.dm.push(decryptedMessage)
+        directMessage.dmsg.push(decryptedMessage)
 
         // Only show 1 notification of the newest received message
         if (showedNotification) return
@@ -1001,7 +1001,7 @@ export const actions = {
 
     const sentResult = dispatch('queryDocuments', {
       dappName: 'directmessage',
-      typeLocator: 'dm',
+      typeLocator: 'dmsg',
       queryOpts: queryOptsSent,
     })
 
@@ -1028,7 +1028,7 @@ export const actions = {
         )[0][1]
 
         console.log('decryptedMessage :>> ', decryptedMessage)
-        directMessage.dm.push(decryptedMessage)
+        directMessage.dmsg.push(decryptedMessage)
       })
     })
 
@@ -1036,18 +1036,18 @@ export const actions = {
 
     console.log('directMessage :>> ', directMessage)
 
-    const sendingDms = [...state.directMessage.dm].filter(
+    const sendingDms = [...state.directMessage.dmsg].filter(
       (message) => message.isSending
     )
 
-    directMessage.dm = directMessage.dm.concat(sendingDms)
+    directMessage.dmsg = directMessage.dmsg.concat(sendingDms)
 
-    directMessage.dm.sort((a, b) => (a.$createdAt > b.$createdAt ? 1 : -1))
+    directMessage.dmsg.sort((a, b) => (a.$createdAt > b.$createdAt ? 1 : -1))
 
     // Deduplicate messages by $id
-    directMessage.dm = directMessage.dm.filter(
-      (message, idx, dm) =>
-        dm.findIndex((msg) => msg.$id === message.$id) === idx
+    directMessage.dmsg = directMessage.dmsg.filter(
+      (message, idx, dmsg) =>
+        dmsg.findIndex((msg) => msg.$id === message.$id) === idx
     )
 
     commit('setDirectMessage', directMessage)
@@ -1291,7 +1291,7 @@ export const actions = {
     )
 
     console.log('encMessage :>> ', encMessage)
-    // Prepare `type: dm` DirectMessage document
+    // Prepare `type: dmsg` DirectMessage document
     const doc = {
       encMessage,
       senderUserId: state.name.userId,
@@ -1322,7 +1322,7 @@ export const actions = {
 
       // TODO documents.create is slow causing lag in chat UX (appendDirectMessageSending)
       const directMessageDocument = await client.platform.documents.create(
-        `directmessage.dm`,
+        `directmessage.dmsg`,
         identity,
         doc
       )
@@ -2728,11 +2728,11 @@ export const actions = {
       state.dappState.lastSeen[contact[1]] || contact[2],
     ])
 
-    const lastIndex = state.directMessage.dm.length - 1
+    const lastIndex = state.directMessage.dmsg.length - 1
 
     // eslint-disable-next-line no-unused-vars
     const lastDirectMessageTimestamp =
-      state.directMessage.dm[lastIndex].$createdAt
+      state.directMessage.dmsg[lastIndex].$createdAt
 
     const contactListLastSeenFiltered = contactListLastSeen.filter(
       (el) => el[1] < lastDirectMessageTimestamp

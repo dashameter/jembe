@@ -10,6 +10,7 @@
 
 # Remove stale contractIds
 rm env/registeredContracts_local.json 
+rm -rf ~/.evoenv
 
  
 # Fund service account to register contracts

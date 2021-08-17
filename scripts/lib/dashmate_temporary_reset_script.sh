@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -e
 #COLLATERAL_KEY=cSoFoRqFaA7ha2ovL4yeZPmog2CrKfq6WiDXF4CaV3RmCcTGJMGk
 #COLLATERAL_ADDRESS=ySPRMNDVBhZVZvDS4wGn4Ujuq2wP4AcwLK
 

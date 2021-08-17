@@ -326,10 +326,10 @@ export default {
           this.chatPartnerUserName.toLowerCase()
         ] || 0
 
-      const lastIndex = this.$store.state.directMessage.dm.length - 1
+      const lastIndex = this.$store.state.directMessage.dmsg.length - 1
 
-      const newTimestamp = this.$store.state.directMessage.dm[lastIndex]
-        ? this.$store.state.directMessage.dm[lastIndex].$createdAt
+      const newTimestamp = this.$store.state.directMessage.dmsg[lastIndex]
+        ? this.$store.state.directMessage.dmsg[lastIndex].$createdAt
         : 0
 
       if (newTimestamp > prevTimestamp) {

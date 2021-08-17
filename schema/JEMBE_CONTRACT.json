@@ -1,5 +1,6 @@
 {
   "jams": {
+    "type": "object",
     "indices": [
       {
         "properties": [
@@ -101,6 +102,7 @@
     "additionalProperties": false
   },
   "likes": {
+    "type": "object",
     "indices": [
       {
         "properties": [
@@ -146,6 +148,7 @@
     "additionalProperties": false
   },
   "follows": {
+    "type": "object",
     "indices": [
       {
         "properties": [
@@ -184,6 +187,7 @@
     "additionalProperties": false
   },
   "profile": {
+    "type": "object",
     "indices": [
       {
         "unique": false,
@@ -253,6 +257,7 @@
     "additionalProperties": false
   },
   "lastSeen": {
+    "type": "object",
     "indices": [
       {
         "properties": [
@@ -290,6 +295,7 @@
     "additionalProperties": false
   },
   "mentions": {
+    "type": "object",
     "indices": [
       {
         "unique": true,
@@ -359,6 +365,7 @@
     "additionalProperties": false
   },
   "tags": {
+    "type": "object",
     "indices": [
       {
         "unique": true,
@@ -422,6 +429,7 @@
     "additionalProperties": false
   },
   "bookmarks": {
+    "type": "object",
     "indices": [
       {
         "properties": [
@@ -460,6 +468,7 @@
     "additionalProperties": false
   },
   "state": {
+    "type": "object",
     "indices": [
       {
         "properties": [

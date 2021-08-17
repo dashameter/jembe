@@ -1,106 +1,107 @@
 {
-    "datastore": {
-        "indices": [
-            {
-                "properties": [
-                    {
-                        "$ownerId": "asc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "$createdAt": "desc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "$updatedAt": "desc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "userId": "desc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "userNormalizedLabel": "desc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "blobHash": "asc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "chunkHash": "asc"
-                    }
-                ]
-            },
-            {
-                "properties": [
-                    {
-                        "chunk": "asc"
-                    }
-                ]
-            }
-        ],
-        "required": [
-            "blob",
-            "blobChunks",
-            "blobHash",
-            "chunk",
-            "chunkHash",
-            "userId",
-            "userNormalizedLabel",
-            "$updatedAt",
-            "$createdAt"
-        ],
-        "properties": {
-            "blobChunks": {
-                "type": "number"
-            },
-            "blobHash": {
-                "type": "string",
-                "maxLength": 1024,
-                "minLength": 0
-            },
-            "chunk": {
-                "type": "number"
-            },
-            "chunkHash": {
-                "type": "string",
-                "maxLength": 1024,
-                "minLength": 0
-            },
-            "blob": {
-                "type": "string"
-            },
-            "userId": {
-                "type": "string",
-                "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
-                "maxLength": 44,
-                "minLength": 42
-            },
-            "userNormalizedLabel": {
-                "type": "string",
-                "maxLength": 1024,
-                "minLength": 0
-            }
-        },
-        "additionalProperties": false
-    }
+  "datastore": {
+    "type": "object",
+    "indices": [
+      {
+        "properties": [
+          {
+            "$ownerId": "asc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "$createdAt": "desc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "$updatedAt": "desc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "userId": "desc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "userNormalizedLabel": "desc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "blobHash": "asc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "chunkHash": "asc"
+          }
+        ]
+      },
+      {
+        "properties": [
+          {
+            "chunk": "asc"
+          }
+        ]
+      }
+    ],
+    "required": [
+      "blob",
+      "blobChunks",
+      "blobHash",
+      "chunk",
+      "chunkHash",
+      "userId",
+      "userNormalizedLabel",
+      "$updatedAt",
+      "$createdAt"
+    ],
+    "properties": {
+      "blobChunks": {
+        "type": "number"
+      },
+      "blobHash": {
+        "type": "string",
+        "maxLength": 1024,
+        "minLength": 0
+      },
+      "chunk": {
+        "type": "number"
+      },
+      "chunkHash": {
+        "type": "string",
+        "maxLength": 1024,
+        "minLength": 0
+      },
+      "blob": {
+        "type": "string"
+      },
+      "userId": {
+        "type": "string",
+        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$",
+        "maxLength": 44,
+        "minLength": 42
+      },
+      "userNormalizedLabel": {
+        "type": "string",
+        "maxLength": 1024,
+        "minLength": 0
+      }
+    },
+    "additionalProperties": false
+  }
 }
